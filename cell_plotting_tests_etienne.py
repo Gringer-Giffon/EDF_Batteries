@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-data = pd.read_csv(
-    r"C:\Users\User\modelling_weeks_2\battery_project\cells_data\CELL_C_TEST_00.csv")
+dataframes = [pd.read_csv(file) for file in cells_data]
 
 time = data["Total Time"]
 current = data["Current"]
