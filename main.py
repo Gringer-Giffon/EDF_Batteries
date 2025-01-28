@@ -51,6 +51,5 @@ def plot_test(cell, test):
     return None
 
 
-plot_test("d", "01")
-plot_test("C", "00")
-plt.show()
+if __name__ == '__main__':
+    None
