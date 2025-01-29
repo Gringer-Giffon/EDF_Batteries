@@ -64,6 +64,18 @@ def extract(cell, test):
     return data
 
 
+def extract_all_steps(first, second, cell, test):
+    '''
+    Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
+
+    Returns dataframe for given step interval, does not remove duplicate step sequences
+    '''
+
+    data = extract(cell, test)
+    step_data = data[data["Step"].isin(list(range(first, second+1)))]
+    return step_data
+
+
 def extract_step(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
@@ -78,7 +90,7 @@ def extract_step(first, second, cell, test):
     step_indices = step_data.index
     for i in range(1, len(step_indices)):
         # Check for breaks in the sequence
-        if step_indices[i] != step_indices[i - 1] + 1:  
+        if step_indices[i] != step_indices[i - 1] + 1:
             # Keep only the first block
             step_data = step_data.loc[step_indices[:i]]
             break
@@ -116,6 +128,48 @@ def plot_step(first, second, cell, test):
 
     return None
 
+
+def extract_OCV_D():
+    '''
+    USELESS FUNCTION
+
+    Takes average of OCV for each test on cell D
+
+    Returns dictionary of test number and average OCV
+    '''
+    extract_data = {test: 0 for test in range(0, 13+1)}
+    for element in extract_data:
+        print(element)
+        average = 0
+        if element < 10:
+            step_data = extract_all_steps(
+                5, 7, "D", "0"+str(element))[extract_all_steps(5, 7, "D", "0"+str(element))["Step"] == 7]
+            print(step_data)
+        else:
+            step_data = extract_all_steps(5, 7, "D", str(element))[
+                extract_all_steps(5, 7, "D", str(element))["Step"] == 7]
+        for value in step_data["Voltage"]:
+            average += value
+        extract_data[element] = average/len(step_data["Voltage"])
+    return extract_data
+    '''
+    extract_data = {test:0 for test in range(0,13+1)}
+    for element in extract_data:
+        step_data = extract_step(5, 7, "D", element)
+        extract_data[element] = step_data["Voltage"].iloc[-1]
+    return extract_data
+    '''
+
+
 if __name__ == '__main__':
-    plot_step(5, 7, "D", "01")
-    plt.show()
+    '''
+    test1 = extract("D", "04")
+    test2 = extract("D","13")
+    test3 = extract("D",12)
+
+    plt.plot(test1["Total Time"], test1["Voltage"])
+    plt.plot(test2["Total Time"], test2["Voltage"])
+    plt.plot(test3["Total Time"], test3["Voltage"])
+    plt.legend(["Test 1", "Test 2","Test 3"])
+    '''
+    # plot_step(7, 8, "D", "01")
