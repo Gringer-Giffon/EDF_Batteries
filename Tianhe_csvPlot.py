@@ -60,10 +60,10 @@ def d_locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot th
                       dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].values[0]])
 
     
-    plt.text(A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0], 'A')
-    plt.text(B, dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0], 'B')
-    plt.text(C, dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0], 'C')
-    plt.text(D, dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0], 'D')
+    plt.text(A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].values[0], 'A')
+    plt.text(B, dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].values[0], 'B')
+    plt.text(C, dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].values[0], 'C')
+    plt.text(D, dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].values[0], 'D')
     
     plt.subplot(2,2,2)
     plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Current'])
@@ -72,13 +72,13 @@ def d_locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot th
     plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Step'])
 
     plt.suptitle(f'Cell D Cycle {cycle} Impluse Number {number}')
-
+    
     plt.show()
     
-    return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0]], [B,
-                dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0]], [C,
-                dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0]], [D,
-                dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0]]
+    return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].values[0]], [B,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].values[0]], [C,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].values[0]], [D,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].values[0]]
 
 def d_locate_ABCD_n(dfd, cycle, number):     # locate points ABCD without plotting them on graphs, not sure if it works on cellc
     '''
@@ -154,6 +154,7 @@ def c_locate_ABCD(dfc, cycle, number):      # my guessing of how to plot ABCD in
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
 
 def c_locate_ABCD_n(dfc, cycle, number):      # my guessing of how to plot ABCD in cell c
+    
     A1,C1 = locate(dfc[cycle], 7, number, offset=1)
     B1,x = locate(dfc[cycle], 7, number)
     D1,x = locate(dfc[cycle], 9, number, offset=1)
@@ -168,13 +169,49 @@ def c_locate_ABCD_n(dfc, cycle, number):      # my guessing of how to plot ABCD 
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].iloc[0]], [C2,
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0]], [D2,
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
-    
+
+def calc_R0_sample(A,B,C,D):        # Not Final Value
+    return A-B+D-C
+
 if __name__ == "__main__":
-    A, B, C, D = d_locate_ABCD_n(dfd, 1, 1)
+    '''   
+    for df in dfd:        # noticing that cycle 13 and 12 have only 9 impulses. 
+        mask = df['Step'] == 7
+        df['start'] = mask& ~mask.shift(1, fill_value=False)
+        df['end'] = mask& ~mask.shift(-1, fill_value=False)
+        start_indices = df.index[df['start']].tolist()
+        end_indices = df.index[df['end']].tolist()
+        print(len(start_indices))
+   
+    plt.plot(dfd[13]['Total Time'], dfd[13]['Voltage'])
+    plt.plot(dfd[12]['Total Time'], dfd[12]['Voltage'])
+    plt.plot(dfd[11]['Total Time'], dfd[11]['Voltage'])
+    plt.show()
+    '''
+    R0 = []
+    for i in range(len(dfd)):
+        mask = dfd[i]['Step'] == 7
+        dfd[i]['start'] = mask& ~mask.shift(1, fill_value=False)
+        start_indices = dfd[i].index[dfd[i]['start']].tolist()
+        A,B,C,D = 0,0,0,0
+        for j in range(len(start_indices)):
+            At,Bt,Ct,Dt = d_locate_ABCD_n(dfd, i, j)
+            A+=(At[1]/len(start_indices))
+            B+=(Bt[1]/len(start_indices))
+            C+=(Ct[1]/len(start_indices))
+            D+=(Dt[1]/len(start_indices))
+        R0.append(calc_R0_sample(A,B,C,D))
+
+    plt.plot(R0)
+    plt.show()
+    
+    
+    
+    '''
+    A, B, C, D = d_locate_ABCD_n(dfd, 1, 7)
     print(A,B,C,D, '\n')
 
-    A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD_n(dfc, 0, 1)
+    A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD(dfc, 0, 7)
     print(A1, B1, C1, D1, A2, B2, C2, D2)
-    
-    
+    '''
     
