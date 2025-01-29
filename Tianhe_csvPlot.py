@@ -71,6 +71,8 @@ def d_locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot th
     plt.subplot(2,2,3)
     plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Step'])
 
+    plt.suptitle(f'Cell D Cycle {cycle} Impluse Number {number}')
+
     plt.show()
     
     return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0]], [B,
@@ -134,6 +136,7 @@ def c_locate_ABCD(dfc, cycle, number):      # my guessing of how to plot ABCD in
     plt.text(D2, dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0], 'D2')
     
     #plotAll(dfc, 'Voltage', t_s, t_e)
+    plt.suptitle(f'Cell C Cycle {cycle} Impulse Number {number}')
              
     plt.subplot(2,2,3)
     plt.plot(extract(dfc[0], t_s, t_e)['Total Time'], extract(dfc[0], t_s, t_e)['Step'])
@@ -149,12 +152,28 @@ def c_locate_ABCD(dfc, cycle, number):      # my guessing of how to plot ABCD in
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].iloc[0]], [C2,
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0]], [D2,
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
+
+def c_locate_ABCD_n(dfc, cycle, number):      # my guessing of how to plot ABCD in cell c
+    A1,C1 = locate(dfc[cycle], 7, number, offset=1)
+    B1,x = locate(dfc[cycle], 7, number)
+    D1,x = locate(dfc[cycle], 9, number, offset=1)
+    B2, C2 = locate(dfc[cycle], 9, number)
+    x, D2 = locate(dfc[cycle], 10, number)
+
+    return [A1, dfc[cycle].loc[dfc[cycle]['Total Time'] == A1, 'Voltage'].iloc[0]], [B1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == B1, 'Voltage'].iloc[0]], [C1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == C1, 'Voltage'].iloc[0]], [D1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].iloc[0]], [D1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].iloc[0]], [B2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].iloc[0]], [C2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0]], [D2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
     
 if __name__ == "__main__":
-    A, B, C, D = d_locate_ABCD(dfd, 1, 1)
-    print(A,B,C,D)
+    A, B, C, D = d_locate_ABCD_n(dfd, 1, 1)
+    print(A,B,C,D, '\n')
 
-    A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD(dfc, 1, 0)
+    A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD_n(dfc, 0, 1)
     print(A1, B1, C1, D1, A2, B2, C2, D2)
     
     
