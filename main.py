@@ -165,28 +165,33 @@ def soc_d(test):
     '''
     Parameters: test (string) in the form 00, 01, etc..
 
-    Calculates state of charge for each time during discharge for one test
-    Returns list of state of charge values for each time in discharge
+    Calculates the state of charge of D cell at a given time for the discharge at the end of the test
+    Returns list of SOC values
     '''
 
-    data = extract_step(21, 23, "D", test)
+    data = extract_step(21, 24, "D", test)
 
     # Calculate I and t
     I = abs(data["Current"].mean())
     t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
 
     # Calculate Q remaining and Q available
-    Q_remaining = I*t/3600  # integral of constant value, in Ah
-    print("Remaining charge: "+str(Q_remaining))
+    Q_remaining = I*t/3600
 
-    Q_available = [Q_remaining - I*(data["Total Time"].iloc[i]-data["Total Time"].iloc[0])/3600 for i in range(
-        len(data["Total Time"]))]  # difference between Q remaining and the Q expended since last charge
-    print("Available charge" + str(Q_available))
+    Q_available = [Q_remaining - I*(data["Total Time"].iloc[i] -
+                                    data["Total Time"].iloc[0])/3600 for i in range(len(data["Total Time"]))]
 
     SOC = [Q_available[i]/Q_remaining for i in range(len(data["Total Time"]))]
+
+    """
+    soc_voltage_dict = {
+        data["Voltage"].iloc[i]: Q_available[i] / Q_remaining
+        for i in range(len(data["Total Time"]))}
+    """
+
     return SOC
 
 
 if __name__ == '__main__':
-    plot_step(5, 7, "D", "01")
+    plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
     plt.show()
