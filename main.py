@@ -81,6 +81,7 @@ def plot_step(first,second,cell,test):
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
 
     Plots voltage current and step for given step interval
+    Returns None
     '''
 
     # Extracting data
