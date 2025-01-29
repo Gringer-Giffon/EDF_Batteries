@@ -87,6 +87,7 @@ def d_locate_ABCD_n(dfd, cycle, number):     # locate points ABCD without plotti
     number represents the impulse you're locating
     '''
     A,C = locate(dfd[cycle], 6, number, offset=1)
+    #print(C)
     B,x = locate(dfd[cycle], 6, number)
     D,E = locate(dfd[cycle], 7, number)
     return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0]], [B,
@@ -170,8 +171,8 @@ def c_locate_ABCD_n(dfc, cycle, number):      # my guessing of how to plot ABCD 
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0]], [D2,
                 dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
 
-def calc_R0_sample(A,B,C,D):        # Not Final Value
-    return A-B+D-C
+def calc_R0_sample(A,B,C,D,I):        # Not Final Value
+    return 0.5*(A-B+D-C)/I
 
 if __name__ == "__main__":
     '''   
@@ -194,13 +195,19 @@ if __name__ == "__main__":
         dfd[i]['start'] = mask& ~mask.shift(1, fill_value=False)
         start_indices = dfd[i].index[dfd[i]['start']].tolist()
         A,B,C,D = 0,0,0,0
+        I = 0
         for j in range(len(start_indices)):
             At,Bt,Ct,Dt = d_locate_ABCD_n(dfd, i, j)
+            I+=abs(extract(dfd[i], Bt[0], Ct[0])['Current'].iloc[0]/len(start_indices))
             A+=(At[1]/len(start_indices))
             B+=(Bt[1]/len(start_indices))
             C+=(Ct[1]/len(start_indices))
             D+=(Dt[1]/len(start_indices))
-        R0.append(calc_R0_sample(A,B,C,D))
+
+        #print(A,B,C,D,I)
+        R0.append(calc_R0_sample(A,B,C,D,I))
+        
+    #A,B,C,D=d_locate_ABCD(dfd, 6, 0)
 
     plt.plot(R0)
     plt.show()
