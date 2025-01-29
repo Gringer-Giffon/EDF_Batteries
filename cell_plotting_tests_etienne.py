@@ -15,5 +15,5 @@ voltage = data["Voltage"]
 step = data["Step"]
 """
 
-main.plot_test("C", "01")
-plt.show()
+print(main.extract("C", "01")[3])
+

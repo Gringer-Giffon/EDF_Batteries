@@ -23,10 +23,10 @@ def plot_test(cell, test):
 
     plot_data = extract(cell, test)
     # Data extraction from dataframe
-    time = plot_data[0]
-    current = plot_data[1]
-    voltage = plot_data[2]
-    step = plot_data[3]
+    time = plot_data["Total Time"]
+    current = plot_data["Current"]
+    voltage = plot_data["Voltage"]
+    step = plot_data["Step"]
 
     # Plotting
     fig, axs = plt.subplots(3, 1)
@@ -50,7 +50,7 @@ def extract(cell, test):
     Parameters : cell (string) C or D, test (string) in the form 00, 01, etc..
 
     Extracts raw data from csv files corresponding to given cell and test
-    Returns time, current, voltage, step columns as dataframe columns
+    Returns dataframe of extracted data
     '''
 
     file = [pd.read_csv(os.path.join(directory, f))
@@ -61,14 +61,9 @@ def extract(cell, test):
         print("No test found for given cell and test. Cell entry must be C/c or D/d")
         return None
 
-    # Data extraction from dataframe
-    time = data["Total Time"]
-    current = data["Current"]
-    voltage = data["Voltage"]
-    step = data["Step"]
-
-    return time, current, voltage, step
+    return data
 
 
 if __name__ == '__main__':
-    None
+    plot_test("C", "01")
+    plt.show()
