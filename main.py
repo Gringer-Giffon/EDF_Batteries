@@ -160,6 +160,9 @@ def extract_OCV_D():
     return extract_data
     '''
 
+def q_initial_d():
+    voltage_at_time = extract("D", "00")["Voltage"][extract("D", "00")["Total Time"] == 123658.7]
+    return voltage_at_time.iloc[0] if not voltage_at_time.empty else None
 
 def soc_d(test):
     '''
@@ -194,5 +197,8 @@ def soc_d(test):
 
 if __name__ == '__main__':
     #plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
+    data = extract("D", "00")
+    print(data.loc[(data["Total Time"] > 123650) & (data["Total Time"] < 123670)])
     plot_test("D", "01")
+    print(q_initial_d())
     plt.show()
