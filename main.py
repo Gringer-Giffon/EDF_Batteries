@@ -161,6 +161,32 @@ def extract_OCV_D():
     '''
 
 
+def soc_d(test):
+    '''
+    Parameters: test (string) in the form 00, 01, etc..
+
+    Calculates state of charge for each time during discharge for one test
+    Returns list of state of charge values for each time in discharge
+    '''
+
+    data = extract_step(21, 23, "D", test)
+
+    # Calculate I and t
+    I = abs(data["Current"].mean())
+    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
+
+    # Calculate Q remaining and Q available
+    Q_remaining = I*t/3600  # integral of constant value, in Ah
+    print("Remaining charge: "+str(Q_remaining))
+
+    Q_available = [Q_remaining - I*(data["Total Time"].iloc[i]-data["Total Time"].iloc[0])/3600 for i in range(
+        len(data["Total Time"]))]  # difference between Q remaining and the Q expended since last charge
+    print("Available charge" + str(Q_available))
+
+    SOC = [Q_available[i]/Q_remaining for i in range(len(data["Total Time"]))]
+    return SOC
+
+
 if __name__ == '__main__':
     '''
     test1 = extract("D", "04")
