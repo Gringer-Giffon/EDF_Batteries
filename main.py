@@ -160,18 +160,22 @@ def extract_OCV_D():
     return extract_data
     '''
 
+
 def q_initial_d_precise():
     '''
     Returns initial charge for D cell
     '''
-    voltage_at_time = extract("D", "00")[(extract("D", "00")["Total Time"] >= 123658.7) & (extract("D", "00")["Total Time"] <= 142474.6)]
+    voltage_at_time = extract("D", "00")[(extract("D", "00")[
+        "Total Time"] >= 123658.7) & (extract("D", "00")["Total Time"] <= 142474.6)]
     I = abs(voltage_at_time["Current"].mean())
-    t = voltage_at_time["Total Time"].iloc[-1]-voltage_at_time["Total Time"].iloc[0]
+    t = voltage_at_time["Total Time"].iloc[-1] - \
+        voltage_at_time["Total Time"].iloc[0]
 
     return I*t/3600
 
+
 def q_initial_d():
-    data = extract_step(21, 24, "D", "00")
+    data = extract_step(21, 23, "D", "00")
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -179,8 +183,11 @@ def q_initial_d():
 
     # Calculate Q remaining and Q available
     Q_remaining = I*t/3600
+    if Q_remaining == 0:
+        raise ValueError("Initial charge cannot be zero.")
 
     return Q_remaining
+
 
 def soc_d(test):
     '''
@@ -212,6 +219,7 @@ def soc_d(test):
 
     return SOC
 
+
 def soh(test):
     '''
     Parameters: test (string) in the form 00, 01, etc..
@@ -220,7 +228,7 @@ def soh(test):
     Returns SOH value of test
     '''
 
-    data = extract_step(21, 24, "D", test)
+    data = extract_step(21, 23, "D", test)
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -229,22 +237,23 @@ def soh(test):
     # Calculate Q remaining
     Q_remaining = I*t/3600
     q_initial = q_initial_d()
-    
-    SOH = Q_remaining/ q_initial
-    print(Q_remaining,q_initial)
+
+    SOH = Q_remaining / q_initial
+    print(Q_remaining, q_initial)
     return SOH
 
 
 if __name__ == '__main__':
-    #plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
+    # plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
     data = extract("D", "00")
-    #print(data.loc[(data["Total Time"] > 142460) & (data["Total Time"] < 142480)])
-    plot_test("D", "01")
+    # print(data.loc[(data["Total Time"] > 142460) & (data["Total Time"] < 142480)])
+    # plot_test("D", "01")
+    # plot_test("D","13")
     soh_s = []
-    for i in range(0,13+1):
+    for i in range(0, 13+1):
         if i < 10:
             soh_s.append(soh("0"+str(i)))
         else:
             soh_s.append(soh(str(i)))
-    #plt.plot(list(range(0,13+1)), soh_s )
+    plt.plot(list(range(0, 13+1)), soh_s)
     plt.show()
