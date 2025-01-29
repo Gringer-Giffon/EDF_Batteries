@@ -116,7 +116,6 @@ def plot_step(first, second, cell, test):
 
     return None
 
-
 if __name__ == '__main__':
-    plot_step(1, 7, "D", "01")
+    plot_step(5, 7, "D", "01")
     plt.show()
