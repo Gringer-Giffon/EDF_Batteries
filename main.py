@@ -193,5 +193,6 @@ def soc_d(test):
 
 
 if __name__ == '__main__':
-    plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
+    #plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
+    plot_test("D", "01")
     plt.show()
