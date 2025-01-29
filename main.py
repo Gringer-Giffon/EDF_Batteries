@@ -64,6 +64,18 @@ def extract(cell, test):
     return data
 
 
+def extract_all_steps(first, second, cell, test):
+    '''
+    Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
+
+    Returns dataframe for given step interval, does not remove duplicate step sequences
+    '''
+
+    data = extract(cell, test)
+    step_data = data[data["Step"].isin(list(range(first, second+1)))]
+    return step_data
+
+
 def extract_step(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
@@ -78,7 +90,7 @@ def extract_step(first, second, cell, test):
     step_indices = step_data.index
     for i in range(1, len(step_indices)):
         # Check for breaks in the sequence
-        if step_indices[i] != step_indices[i - 1] + 1:  
+        if step_indices[i] != step_indices[i - 1] + 1:
             # Keep only the first block
             step_data = step_data.loc[step_indices[:i]]
             break
@@ -116,5 +128,65 @@ def plot_step(first, second, cell, test):
 
     return None
 
+
+def extract_OCV_D():
+    '''
+    USELESS FUNCTION
+
+    Takes average of OCV for each test on cell D
+
+    Returns dictionary of test number and average OCV
+    '''
+    extract_data = {test: 0 for test in range(0, 13+1)}
+    for element in extract_data:
+        print(element)
+        average = 0
+        if element < 10:
+            step_data = extract_all_steps(
+                5, 7, "D", "0"+str(element))[extract_all_steps(5, 7, "D", "0"+str(element))["Step"] == 7]
+            print(step_data)
+        else:
+            step_data = extract_all_steps(5, 7, "D", str(element))[
+                extract_all_steps(5, 7, "D", str(element))["Step"] == 7]
+        for value in step_data["Voltage"]:
+            average += value
+        extract_data[element] = average/len(step_data["Voltage"])
+    return extract_data
+    '''
+    extract_data = {test:0 for test in range(0,13+1)}
+    for element in extract_data:
+        step_data = extract_step(5, 7, "D", element)
+        extract_data[element] = step_data["Voltage"].iloc[-1]
+    return extract_data
+    '''
+
+
+def soc_d(test):
+    '''
+    Parameters: test (string) in the form 00, 01, etc..
+
+    Calculates state of charge for each time during discharge for one test
+    Returns list of state of charge values for each time in discharge
+    '''
+
+    data = extract_step(21, 23, "D", test)
+
+    # Calculate I and t
+    I = abs(data["Current"].mean())
+    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
+
+    # Calculate Q remaining and Q available
+    Q_remaining = I*t/3600  # integral of constant value, in Ah
+    print("Remaining charge: "+str(Q_remaining))
+
+    Q_available = [Q_remaining - I*(data["Total Time"].iloc[i]-data["Total Time"].iloc[0])/3600 for i in range(
+        len(data["Total Time"]))]  # difference between Q remaining and the Q expended since last charge
+    print("Available charge" + str(Q_available))
+
+    SOC = [Q_available[i]/Q_remaining for i in range(len(data["Total Time"]))]
+    return SOC
+
+
 if __name__ == '__main__':
+    plot_step(5, 7, "D", "01")
     plt.show()
