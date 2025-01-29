@@ -255,3 +255,7 @@ if __name__ == '__main__':
             soh_s.append(soh(str(i)))
     plt.plot(list(range(0, 13+1)), soh_s)
     plt.show()
+
+    # soh decreases only very slightly, we should find a more robust/precise way of calculating
+    # OCV, how does it correspond to a specific SoC
+    # look at C
