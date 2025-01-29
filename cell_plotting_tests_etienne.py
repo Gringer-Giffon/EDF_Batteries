@@ -23,27 +23,49 @@ print(main.extract("C", "01")["Step"])
 # Q available at a time tis the difference between the Q remaining and the integral of Q up to t
 
 def soc_d(test):
-    data = main.extract_step(21, 23, "D", test)
+    '''
+    Parameters: test (string) in the form 00, 01, etc..
+    
+    Calculates the state of charge of D cell at a given time for the discharge at the end of the test
+    Returns list of SOC values
+    '''
+
+    data = main.extract_step(21, 24, "D", test)
+
+    #Calculate I and t
     I = abs(data["Current"].mean())
     t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
+
+    #Calculate Q remaining and Q available
     Q_remaining = I*t/3600
-    print("Remaining charge: "+str(Q_remaining))
+    
 
     Q_available = [Q_remaining - I*(data["Total Time"].iloc[i] -
                                     data["Total Time"].iloc[0])/3600 for i in range(len(data["Total Time"]))]
-    print("Available charge" + str(Q_available))
 
+    
     SOC = [Q_available[i]/Q_remaining for i in range(len(data["Total Time"]))]
+    
+    """
     soc_voltage_dict = {
         data["Voltage"].iloc[i]: Q_available[i] / Q_remaining
         for i in range(len(data["Total Time"]))}
+    """
 
-    return SOC, soc_voltage_dict
+    return SOC
 
 
 # if we then associate a State of Charge to voltage, it should be okay right, because there is a direct relationship between the OCV and SoC
-data = main.extract_step(21, 23, "D", "01")["Voltage"]
-SOC = [soc_d("01")[1][voltage] for voltage in data]
+data = main.extract("D", "01")["Voltage"]
+SOC = []
+"""
+for element in data:
+    if element in soc_d("01")[1].keys():
 
-plt.plot(main.extract_step(21, 23, "D", "01")["Total Time"], SOC)
+        SOC.append(soc_d("01")[1][element])
+    else:
+        pass
+"""
+plt.plot(main.extract_step(21,24,"D", "01")["Total Time"], soc_d("01"))  
 plt.show()
+
