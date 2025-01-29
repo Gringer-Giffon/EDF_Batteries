@@ -64,19 +64,28 @@ def extract(cell, test):
     return data
 
 
-def extract_step(first,second,cell,test):
+def extract_step(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
 
     Returns dataframe for given step interval
     '''
 
-    data = extract(cell,test)
-    step_data = data[data["Step"].isin(list(range(first,second+1)))]
+    data = extract(cell, test)
+    step_data = data[data["Step"].isin(list(range(first, second+1)))]
+
+    # Remove duplicate step sequences
+    step_indices = step_data.index
+    for i in range(1, len(step_indices)):
+        # Check for breaks in the sequence
+        if step_indices[i] != step_indices[i - 1] + 1:  
+            # Keep only the first block
+            step_data = step_data.loc[step_indices[:i]]
+            break
     return step_data
 
 
-def plot_step(first,second,cell,test):
+def plot_step(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
 
@@ -85,7 +94,7 @@ def plot_step(first,second,cell,test):
     '''
 
     # Extracting data
-    step_data = extract_step(first,second,cell,test)
+    step_data = extract_step(first, second, cell, test)
     time = step_data["Total Time"]
     current = step_data["Current"]
     voltage = step_data["Voltage"]
@@ -107,8 +116,7 @@ def plot_step(first,second,cell,test):
 
     return None
 
+
 if __name__ == '__main__':
-    plot_test("C", "01")
+    plot_step(1, 7, "D", "01")
     plt.show()
-
-
