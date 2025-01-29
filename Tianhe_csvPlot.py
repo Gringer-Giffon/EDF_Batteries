@@ -35,7 +35,7 @@ def locate(df, step, pattern, offset=0, offset_2=0):        # Extract the df wit
     end_indices = df.index[df['end']].tolist()
     return df['Total Time'][start_indices[pattern]-offset], df['Total Time'][end_indices[pattern]+offset_2]
 
-def locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot them on a graph, not sure if it works on cellc
+def d_locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot them on a graph, not sure if it works on cellc
     '''
     dfd represents the list of dataframes you're using
     cycle represents the specific cycle you're using
@@ -78,7 +78,7 @@ def locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot them
                 dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0]], [D,
                 dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0]]
 
-def locate_ABCD_n(dfd, cycle,  number):     # locate points ABCD without plotting them on graphs, not sure if it works on cellc
+def d_locate_ABCD_n(dfd, cycle, number):     # locate points ABCD without plotting them on graphs, not sure if it works on cellc
     '''
     dfd represents the list of dataframes you're using
     cycle represents the specific cycle you're using
@@ -91,8 +91,71 @@ def locate_ABCD_n(dfd, cycle,  number):     # locate points ABCD without plottin
                 dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0]], [C,
                 dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0]], [D,
                 dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0]]
+
+################################### cell c ###########################################
+def c_locate_ABCD(dfc, cycle, number):      # my guessing of how to plot ABCD in cell c
+    t_s, t_e1 = locate(dfc[cycle], 7, number, offset=3)
+    t_s1, t_e = locate(dfc[cycle], 14, number, offset_2=3)
+    
+    A1,C1 = locate(dfc[cycle], 7, number, offset=1)
+    B1,x = locate(dfc[cycle], 7, number)
+    D1,x = locate(dfc[cycle], 9, number, offset=1)
+    B2, C2 = locate(dfc[cycle], 9, number)
+    x, D2 = locate(dfc[cycle], 10, number)
+    
+
+    plt.subplot(2,2,2)
+    plt.plot(extract(dfc[cycle], t_s, t_e)['Total Time'], extract(dfc[cycle], t_s, t_e)['Current'])
+    #plotAll(dfc, 'Current', t_s, t_e)
+             
+    plt.subplot(2,2,1)
+    plt.plot(extract(dfc[cycle], t_s, t_e)['Total Time'], extract(dfc[cycle], t_s, t_e)['Voltage'])
+    
+    plt.plot([A1, B1], [dfc[cycle].loc[dfc[cycle]['Total Time'] == A1, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == B1, 'Voltage'].values[0]])
+    plt.plot([B1, C1], [dfc[cycle].loc[dfc[cycle]['Total Time'] == B1, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == C1, 'Voltage'].values[0]]) 
+    plt.plot([C1, D1], [dfc[cycle].loc[dfc[cycle]['Total Time'] == C1, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].values[0]])
+    
+    plt.plot([D1, B2], [dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].values[0]])
+    plt.plot([B2, C2], [dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].values[0]])
+    plt.plot([C2, D2], [dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].values[0],
+                      dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].values[0]])
+
+    plt.text(A1, dfc[cycle].loc[dfc[cycle]['Total Time'] == A1, 'Voltage'].iloc[0], 'A1')
+    plt.text(B1, dfc[cycle].loc[dfc[cycle]['Total Time'] == B1, 'Voltage'].iloc[0], 'B1')
+    plt.text(C1, dfc[cycle].loc[dfc[cycle]['Total Time'] == C1, 'Voltage'].iloc[0], 'C1')
+    plt.text(D1, dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].iloc[0], 'D1 / A2')
+    plt.text(B2, dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].iloc[0], 'B2')
+    plt.text(C2, dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0], 'C2')
+    plt.text(D2, dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0], 'D2')
+    
+    #plotAll(dfc, 'Voltage', t_s, t_e)
+             
+    plt.subplot(2,2,3)
+    plt.plot(extract(dfc[0], t_s, t_e)['Total Time'], extract(dfc[0], t_s, t_e)['Step'])
+    #plotAll(dfc, 'Step', t_s, t_e)
+
+    plt.show()
+
+    return [A1, dfc[cycle].loc[dfc[cycle]['Total Time'] == A1, 'Voltage'].iloc[0]], [B1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == B1, 'Voltage'].iloc[0]], [C1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == C1, 'Voltage'].iloc[0]], [D1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].iloc[0]], [D1,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D1, 'Voltage'].iloc[0]], [B2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == B2, 'Voltage'].iloc[0]], [C2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == C2, 'Voltage'].iloc[0]], [D2,
+                dfc[cycle].loc[dfc[cycle]['Total Time'] == D2, 'Voltage'].iloc[0]]
     
 if __name__ == "__main__":
-    A, B, C, D = locate_ABCD(dfd, 0, 1)
+    A, B, C, D = d_locate_ABCD(dfd, 1, 1)
     print(A,B,C,D)
+
+    A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD(dfc, 1, 0)
+    print(A1, B1, C1, D1, A2, B2, C2, D2)
+    
+    
     
