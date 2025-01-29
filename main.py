@@ -188,5 +188,5 @@ def soc_d(test):
 
 
 if __name__ == '__main__':
-    plot_step(5, 7, "D", "01")
+    plot_test("D", "01")
     plt.show()
