@@ -27,36 +27,72 @@ def plotAll(dfs, name, start=None, end=None):       # Plot everything with repse
         df = extract(df, start, end)
         plt.plot(df['Total Time'], df[name])
 
-def locate(df, step, pattern, offset=0):        # Extract the df with respect to steps
+def locate(df, step, pattern, offset=0, offset_2=0):        # Extract the df with respect to steps
     mask = df['Step'] == step
     df['start'] = mask& ~mask.shift(1, fill_value=False)
     df['end'] = mask& ~mask.shift(-1, fill_value=False)
     start_indices = df.index[df['start']].tolist()
     end_indices = df.index[df['end']].tolist()
-    return df['Total Time'][start_indices[pattern]-offset], df['Total Time'][end_indices[pattern]]
+    return df['Total Time'][start_indices[pattern]-offset], df['Total Time'][end_indices[pattern]+offset_2]
 
-if __name__ == "__main__":
-    start, end1 = locate(dfd[0], 6, 1, 1)
-    start1, end = locate(dfd[0], 7, 1)
+def locate_ABCD(dfd, cycle, number):        # locate points ABCD while plot them on a graph, not sure if it works on cellc
+    '''
+    dfd represents the list of dataframes you're using
+    cycle represents the specific cycle you're using
+    number represents the impulse you're locating
+    '''
     
-    plt.subplot(2,2,2)
-    #plotAll(dfd, 'Voltage', start, 42000)
-    plt.plot(extract(dfd[0], start, end)['Total Time'], extract(dfd[0], start, end)['Voltage'])
+    start, end1 = locate(dfd[cycle], 6, number, offset=1)
+    start1, end = locate(dfd[cycle], 7,number, offset_2=-5)
+
+    A,C = locate(dfd[cycle], 6, number, offset=1)
+    B,x = locate(dfd[cycle], 6, number)
+    D,E = locate(dfd[cycle], 7, number)
     
     plt.subplot(2,2,1)
-    #plotAll(dfd, 'Current', 36000, 42000)
-    plt.plot(extract(dfd[0], start, end)['Total Time'], extract(dfd[0], start, end)['Current'])
+    #plotAll(dfd, 'Voltage', start, 42000)
+    plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Voltage'])
+    plt.plot([C, D], [dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].values[0],
+                      dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].values[0]])    
+    plt.plot([B, C], [dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].values[0],
+                      dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].values[0]])
+    plt.plot([A, B], [dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].values[0],
+                      dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].values[0]])
+
+    
+    plt.text(A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0], 'A')
+    plt.text(B, dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0], 'B')
+    plt.text(C, dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0], 'C')
+    plt.text(D, dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0], 'D')
+    
+    plt.subplot(2,2,2)
+    plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Current'])
     
     plt.subplot(2,2,3)
-    #plotAll(dfd, 'Step', 36000, 42000)
-    plt.plot(extract(dfd[0], start, end)['Total Time'], extract(dfd[0], start, end)['Step'])
-
-    '''
-    plt.text(37300, 7.3, "step7:\nan instant and\nrapid discharge", fontsize=12, color="red")
-    plt.text(39000, 9.3, "step9:\nan instant and\nrapid charge", fontsize=12, color="red")
-    
-    plt.text(41000, 10.3, "step10:\na continous discharge", fontsize=12, color="blue")
-    '''
+    plt.plot(extract(dfd[cycle], start, end)['Total Time'], extract(dfd[cycle], start, end)['Step'])
 
     plt.show()
+    
+    return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0]], [B,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0]], [C,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0]], [D,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0]]
+
+def locate_ABCD_n(dfd, cycle,  number):     # locate points ABCD without plotting them on graphs, not sure if it works on cellc
+    '''
+    dfd represents the list of dataframes you're using
+    cycle represents the specific cycle you're using
+    number represents the impulse you're locating
+    '''
+    A,C = locate(dfd[cycle], 6, number, offset=1)
+    B,x = locate(dfd[cycle], 6, number)
+    D,E = locate(dfd[cycle], 7, number)
+    return [A, dfd[cycle].loc[dfd[cycle]['Total Time'] == A, 'Voltage'].iloc[0]], [B,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == B, 'Voltage'].iloc[0]], [C,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == C, 'Voltage'].iloc[0]], [D,
+                dfd[cycle].loc[dfd[cycle]['Total Time'] == D, 'Voltage'].iloc[0]]
+    
+if __name__ == "__main__":
+    A, B, C, D = locate_ABCD(dfd, 0, 1)
+    print(A,B,C,D)
     
