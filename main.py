@@ -183,8 +183,6 @@ def q_initial_d():
 
     # Calculate Q remaining and Q available
     Q_remaining = I*t/3600
-    if Q_remaining == 0:
-        raise ValueError("Initial charge cannot be zero.")
 
     return Q_remaining
 
