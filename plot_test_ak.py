@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import os
 
+from cell_plotting_tests_etienne import *
+
 directory = f"./cells_data"
 
 # extracts all csv file names in directory
@@ -261,7 +263,16 @@ def soh(test):
     print(Q_remaining, q_initial)
     return SOH
 
-def find_OCV(cell, test):
+
+def find_OCV_c(cell, test):
+    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    print(data_no_dupes)
+    return data_no_dupes
+
+
+
+def find_OCV_d(cell, test):
     """
     Parameters: cell (str) C or D, 
                 test (str) in the form of 01, 02, etc...
@@ -269,28 +280,30 @@ def find_OCV(cell, test):
     Returns a list of different times that the circuit has reached OCV
     """
     
-    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    data = extract(cell, test)[extract(cell,test)["Current"] == 0]
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
     print(data_no_dupes)
     return data_no_dupes
 
     
-    total_time = len(data_voltage)
-
-              
 
 
+if __name__ == '__main__':  
+      
 
-if __name__ == '__main__':    
-    
-    find_OCV("D", "03")
-    
+    #find_OCV_d("D", "03")
     plot_test("D", "03")
-    plot_test("D", "04")
     plt.show()
     
     
     """
+    print(len(soc_full_c("05")))
+    print(len(extract("C", "05")["Total Time"]))
+    
+
+    
+
+    
     # plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
     data = extract("D", "00")
     # print(data.loc[(data["Total Time"] > 142460) & (data["Total Time"] < 142480)])
