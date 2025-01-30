@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import os
 
+from cell_plotting_tests_etienne import *
+
 directory = f"./cells_data"
 
 # extracts all csv file names in directory
@@ -269,27 +271,33 @@ def find_OCV(cell, test):
     Returns a list of different times that the circuit has reached OCV
     """
     
-    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    data = extract(cell, test)
     
+    step_col = data["Step"]
     
+    transition_indices = step_col[(step_col == 5) & (step_col.shift(-1) != 5)].index
     
-    print(data)
-    data_voltage = data["Voltage"]
+    extracted_values = data.loc[transition_indices, "Total Time"].tolist()
     
-    total_time = len(data_voltage)
-
-              
-
+    return extracted_values
 
 
-if __name__ == '__main__':    
-    
+
+if __name__ == '__main__':  
+      
+    """ 
     find_OCV("D", "03")
-    
     plot_test("D", "03")
-    plot_test("D", "04")
     plt.show()
+    """
     
+    
+    print(len(soc_full_c("05")))
+    print(len(extract("C", "05")["Total Time"]))
+    
+
+    
+
     
     """
     # plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))

@@ -163,7 +163,7 @@ def soc_d_time(test):
     Q_remaining = I*t/3600
 
     Q_available = [(Q_remaining - I*(data["Total Time"].iloc[i] -
-                                     data["Total Time"].iloc[0])/3600, data["Total Time"].iloc[i]) for i in range(len(data["Total Time"]))]
+                                     data["Total Time"].iloc[0])/   3600, data["Total Time"].iloc[i]) for i in range(len(data["Total Time"]))]
 
     SOC = [(Q_available[i][0]/Q_remaining, data["Total Time"].iloc[i])
            for i in range(len(data["Total Time"]))]
