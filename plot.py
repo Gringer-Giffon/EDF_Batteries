@@ -187,10 +187,5 @@ if __name__ == '__main__':
     '''
 
 
-    
-    # look at C
-    # reorganise files
-    # make stuff available for cell C
-    # find R0
 
     

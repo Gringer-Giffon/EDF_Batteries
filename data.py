@@ -7,6 +7,7 @@ from scipy.integrate import cumulative_trapezoid
 directory = f"./cells_data"
 csv_files = [f for f in os.listdir(directory)]
 
+
 def extract(cell, test):
     '''
     Parameters : cell (string) C or D, test (string) in the form 00, 01, etc..
@@ -25,6 +26,7 @@ def extract(cell, test):
 
     return data
 
+
 def extract_all_steps(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
@@ -35,6 +37,7 @@ def extract_all_steps(first, second, cell, test):
     data = extract(cell, test)
     step_data = data[data["Step"].isin(list(range(first, second+1)))]
     return step_data
+
 
 def extract_step(first, second, cell, test):
     '''
@@ -56,6 +59,7 @@ def extract_step(first, second, cell, test):
             break
     return step_data
 
+
 def q_initial(cell):
     if cell == "C":
         data = extract_step(26, 27, "C", "00")
@@ -73,6 +77,7 @@ def q_initial(cell):
     Q_remaining = I*t/3600
 
     return Q_remaining
+
 
 def soc_d_time(test):
     '''
@@ -103,6 +108,7 @@ def soc_d_time(test):
         for i in range(len(data["Total Time"]))}
     """
     return SOC
+
 
 def soc_full_c(test):
     '''
@@ -207,6 +213,7 @@ def soh(cell, test):
     print(Q_remaining, q_init)
     return SOH
 
+
 def ocv_voltage():
     soc_d_t_list = soc_d_time("01")
     print(soc_d_t_list)
@@ -218,6 +225,7 @@ def ocv_voltage():
                     "Total Time"] == pair[1]]
     print(soc_ocv_v)
     return None
+
 
 def find_OCV(cell, test):
     """
@@ -235,3 +243,14 @@ def find_OCV(cell, test):
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 600)]
     # print(data_no_dupes)
     return data_no_dupes
+
+
+if __name__ == "__main__":
+    print(find_OCV("D", "01"))
+    ocv_voltage()
+
+
+    
+    # look at C
+    # make stuff available for cell C
+    # find R0
