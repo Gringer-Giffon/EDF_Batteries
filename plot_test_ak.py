@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 import os
 
 directory = f"./cells_data"
@@ -11,27 +12,29 @@ csv_files = [f for f in os.listdir(directory)]
 # extract function to extract all data
 
 
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+
 def plot_test(cell, test):
     '''
-    Parameters: cell (string) C or D, test (string) in the form 00, 01, etc..
+    Parameters:
+        cell (string) C or D,
+        test (string) in the form 00, 01, etc..
 
-    Plots voltage current and step for given test
-    Does not show plot
+    Plots voltage, current, and step for given test.
+    Adds a slider to adjust a vertical line dynamically.
 
-    Returns none
+    Returns none.
     '''
 
     plot_data = extract(cell, test)
-    # Data extraction from dataframe
     time = plot_data["Total Time"]
     current = plot_data["Current"]
     voltage = plot_data["Voltage"]
     step = plot_data["Step"]
 
-    # Plotting
-    fig, axs = plt.subplots(3, 1)
-
-    fig.suptitle("Cell: "+cell.upper()+",test: "+test)  # main title
+    fig, axs = plt.subplots(3, 1, figsize=(8, 6))
+    fig.suptitle(f"Cell: {cell.upper()}, Test: {test}")  
 
     axs[0].plot(time, current, "g")
     axs[0].set_title("Current")
@@ -40,9 +43,28 @@ def plot_test(cell, test):
     axs[2].plot(time, step, "g")
     axs[2].set_title("Step")
 
-    plt.subplots_adjust(hspace=1)  # adjust space between plots
+    # Initial vertical line at the middle of the time range
+    vline_x = time.iloc[len(time) // 2]  
+    vlines = [ax.axvline(x=vline_x, color='r', linestyle='--') for ax in axs]
 
-    return None
+    # Adjust layout to make space for the slider
+    plt.subplots_adjust(left=0.1, bottom=0.25, right=0.9, top=0.9, hspace=1)
+
+    # Slider axis and control
+    ax_slider = plt.axes([0.2, 0.1, 0.65, 0.03])  # [left, bottom, width, height]
+    slider = Slider(ax_slider, "Time", time.min(), time.max(), valinit=vline_x)
+
+    def update(val):
+        """ Updates the vertical line when the slider moves """
+        vline_x = slider.val
+        for vline in vlines:
+            vline.set_xdata([vline_x])
+        fig.canvas.draw_idle()  # This ensures the update is shown immediately
+
+    # Connect slider update function
+    slider.on_changed(update)
+
+    plt.show()
 
 
 def extract(cell, test):
@@ -244,35 +266,28 @@ def find_OCV(cell, test):
     Parameters: cell (str) C or D, 
                 test (str) in the form of 01, 02, etc...
                 
-    Returns a list [OCV, final_SoC, final_step]
-        OCV: the OCV of the battery at the end of the test
-        SoC: it's associated SoC corresponding to the given OCV
-        step: the step during the OCV
+    Returns a list of different times that the circuit has reached OCV
     """
     
-    data = extract(cell, test)
-    
-    # Take the Voltage at the end of the test (ie. OCV) and its corresponding test
-    OCV = data["Voltage"].iloc[-1]
-    final_step = data["Step"].iloc[-1]
+    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
     
     
     
-    data_full_discharge = extract_step(21, 24, "D", test)
-    voltage_full_discharge = data_full_discharge["Voltage"]
+    print(data)
+    data_voltage = data["Voltage"]
     
+    total_time = len(data_voltage)
 
-    
-    
-    return [OCV, final_step]
-    
+              
 
 
 
-if __name__ == '__main__':
-    print(find_OCV("D", "03"))
+if __name__ == '__main__':    
+    
+    find_OCV("D", "03")
     
     plot_test("D", "03")
+    plot_test("D", "04")
     plt.show()
     
     
