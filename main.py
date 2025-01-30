@@ -14,3 +14,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # look at C
+    # make stuff available for cell C
+    # find R0

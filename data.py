@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from scipy.integrate import cumulative_trapezoid
+import plot as pt
+
 
 directory = f"./cells_data"
 csv_files = [f for f in os.listdir(directory)]
@@ -25,18 +27,6 @@ def extract(cell, test):
         return None
 
     return data
-
-
-def extract_all_steps(first, second, cell, test):
-    '''
-    Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
-
-    Returns dataframe for given step interval, does not remove duplicate step sequences
-    '''
-
-    data = extract(cell, test)
-    step_data = data[data["Step"].isin(list(range(first, second+1)))]
-    return step_data
 
 
 def extract_step(first, second, cell, test):
@@ -79,39 +69,21 @@ def q_initial(cell):
     return Q_remaining
 
 
-def soc_full_c(test):
-    '''
-    Parameters: test (string) in the form 00, 01, etc..
-
-    Returns the list of SOC values for cell C
-    '''
-    data_full = extract("C", test)
-    data = extract_step(26, 27, "C", test)
-
-    # Calculate I and t
-    I = abs(data["Current"].mean())
-    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
-
-    # Calculate Q remaining and Q available
-    Q_remaining = I*t/3600
-    Q_available = [Q_remaining + (cumulative_trapezoid(data_full["Current"], data_full["Total Time"], initial=0)[
-                                  i])/3600 for i in range(len(cumulative_trapezoid(data_full["Current"], data_full["Total Time"], initial=0)))]
-
-    SOC = [(Q_available[i]/Q_remaining) - min(Q_available) /
-           Q_remaining for i in range(len(Q_available))]
-
-    return SOC
-
-
-def soc_full_d(test):
+def soc(cell, test):
     '''
     Parameters: test (string) in the form 00, 01, etc..
 
     Returns list of SOC for cell D
     '''
 
-    data_full = extract("D", test)
-    data = extract_step(21, 23, "D", test)
+    data_full = extract(cell, test)
+    if cell == "C":
+        data = extract_step(26, 27, "C", test)
+    elif cell == "D":
+        data = extract_step(21, 23, "D", test)
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -177,9 +149,5 @@ def find_OCV(cell, test):
 
 
 if __name__ == "__main__":
-    print(find_OCV("D", "01"))
-    
-
-    # look at C
-    # make stuff available for cell C
-    # find R0
+    pt.plot_soc("C", "01")
+    plt.show()

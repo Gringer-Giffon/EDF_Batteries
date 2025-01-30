@@ -107,14 +107,8 @@ def plot_soc(cell, test):
     Plots the state of charge of given cell for the given test
     Returns nothing
     '''
-    if cell == "C":
-        soc = dt.soc_full_c(test)
-    elif cell == "D":
-        soc = dt.soc_full_d(test)
-    else:
-        print("Invalid cell entry. Cell entry must be C or D")
-        return None
-
+    soc = dt.soc(cell,test)
+    
     # Plotting
     plt.plot(dt.extract(cell, test)["Total Time"], soc)
     plt.xlabel("Time (s)")
