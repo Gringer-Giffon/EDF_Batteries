@@ -353,15 +353,20 @@ def find_OCV(cell, test):
 
 def soc_ocv(cell, test):
 
-    df_pre = pd.DataFrame(data = {"Total Time":extract(cell,test)["Total Time"], "SoC":soc_full_c(str(test))})
-    
+    df_pre = pd.DataFrame(data = {"Total Time":extract(cell,test)["Total Time"], "SoC":soc_full_d(str(test))})
+    print(df_pre)
+    #plt.plot(df_pre["Total Time"], df_pre["SoC"])
+    #plt.show()
+
     col1 = find_OCV(str(cell),str(test))["Total Time"]
     col2 = find_OCV(str(cell),str(test))["Current"]
     col3 = find_OCV(str(cell),str(test))["Voltage"]
+    print("here:")
+    print(col1)
     if cell == "C": 
-        col4 = df_pre["SoC"][df_pre["Total Time"].isin(col1)]
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0] if i in df_pre["Total Time"].values else np.nan for i in col1]
     elif cell =="D":
-        col4 = df_pre["SoC"][df_pre["Total Time"].isin(col1)]
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0] if i in df_pre["Total Time"].values else np.nan for i in col1]
     else:
         print("Invalid cell")
         return None
@@ -370,6 +375,10 @@ def soc_ocv(cell, test):
     df = pd.DataFrame(data=d)
 
     print(df)
+    plt.plot(df["Voltage"], df["SoC"],"+")
+    
+    
+    
 
 if __name__ == '__main__':
     '''
@@ -378,10 +387,22 @@ if __name__ == '__main__':
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
     '''
-    soc_ocv("C", "01")
+    for i in range(0, 1):
+        if i < 10:
+            soc_ocv("D", "0"+str(i))
+        else:
+            soc_ocv("D", str(i))
+    
     # ocv_voltage()
+    plt.xlabel("OCV (V)")
+    plt.ylabel("SoC (%)")
+    plt.title("SoC vs OCV")
+    #plt.text(x=0,y=0,s=str(soh("D","00")))
     plt.show()
 
     #look at C
-
+    #reorganise files
+    #make stuff available for cell C
+    #find R0
+    
     
