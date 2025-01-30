@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-myList=[]
-
 folderPath = f'./cells_data'
 
 csvFiles = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
@@ -189,7 +187,7 @@ if __name__ == "__main__":
     plt.plot(dfd[12]['Total Time'], dfd[12]['Voltage'])
     plt.plot(dfd[11]['Total Time'], dfd[11]['Voltage'])
     plt.show()
-    '''
+    
     R0 = []
     for i in range(len(dfd)):
         mask = dfd[i]['Step'] == 7
@@ -202,13 +200,11 @@ if __name__ == "__main__":
     plt.plot(R0)
     plt.show()
     
-    
-    
-    '''
     A, B, C, D = d_locate_ABCD_n(dfd, 1, 7)
     print(A,B,C,D, '\n')
 
     A1, B1, C1, D1, A2, B2, C2, D2 = c_locate_ABCD(dfc, 0, 7)
     print(A1, B1, C1, D1, A2, B2, C2, D2)
     '''
-    
+    plt.plot(dfc[0]['Total Time'], dfc[0]['Current'])
+    plt.show()
