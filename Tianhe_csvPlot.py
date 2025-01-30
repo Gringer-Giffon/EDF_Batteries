@@ -175,6 +175,7 @@ def calc_R0_sample(A,B,C,D,I):        # Not Final Value
     return 0.5*(A-B+D-C)/I
 
 if __name__ == "__main__":
+    
     '''   
     for df in dfd:        # noticing that cycle 13 and 12 have only 9 impulses. 
         mask = df['Step'] == 7
@@ -194,20 +195,9 @@ if __name__ == "__main__":
         mask = dfd[i]['Step'] == 7
         dfd[i]['start'] = mask& ~mask.shift(1, fill_value=False)
         start_indices = dfd[i].index[dfd[i]['start']].tolist()
-        A,B,C,D = 0,0,0,0
-        I = 0
         for j in range(len(start_indices)):
-            At,Bt,Ct,Dt = d_locate_ABCD_n(dfd, i, j)
-            I+=abs(extract(dfd[i], Bt[0], Ct[0])['Current'].iloc[0]/len(start_indices))
-            A+=(At[1]/len(start_indices))
-            B+=(Bt[1]/len(start_indices))
-            C+=(Ct[1]/len(start_indices))
-            D+=(Dt[1]/len(start_indices))
-
-        #print(A,B,C,D,I)
-        R0.append(calc_R0_sample(A,B,C,D,I))
-        
-    #A,B,C,D=d_locate_ABCD(dfd, 6, 0)
+            A,B,C,D = d_locate_ABCD_n(dfd, i, j)
+            R0.append(calc_R0_sample(A[1],B[1],C[1],D[1],30))
 
     plt.plot(R0)
     plt.show()
