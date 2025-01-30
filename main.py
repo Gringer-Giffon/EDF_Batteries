@@ -241,12 +241,12 @@ def soh(test):
     return SOH
 
 
-if __name__ == '__main__':
-    # plt.plot(extract_step(21, 24, "D", "01")["Total Time"], soc_d("01"))
-    data = extract("D", "00")
-    # print(data.loc[(data["Total Time"] > 142460) & (data["Total Time"] < 142480)])
-    # plot_test("D", "01")
-    # plot_test("D","13")
+def plot_soh_d():
+    '''
+    Plots the SOH for cell D
+    Returns nothing
+    '''
+
     soh_s = []
     for i in range(0, 13+1):
         if i < 10:
@@ -254,7 +254,10 @@ if __name__ == '__main__':
         else:
             soh_s.append(soh(str(i)))
     plt.plot(list(range(0, 13+1)), soh_s)
-    plt.show()
+
+
+if __name__ == '__main__':
+    None
 
     # soh decreases only very slightly, we should find a more robust/precise way of calculating
     # OCV, how does it correspond to a specific SoC
