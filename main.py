@@ -257,7 +257,8 @@ def plot_soh_d():
 
 
 if __name__ == '__main__':
-    None
+    plot_soh_d()
+    plt.show()
 
     # soh decreases only very slightly, we should find a more robust/precise way of calculating
     # OCV, how does it correspond to a specific SoC
