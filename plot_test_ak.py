@@ -271,13 +271,11 @@ def find_OCV(cell, test):
     Returns a list of different times that the circuit has reached OCV
     """
     
-    data = extract(cell, test)
-    
-    step_col = data["Step"]
-    
-    transition_indices = step_col[(step_col == 5) & (step_col.shift(-1) != 5)].index
-    
-    extracted_values = data.loc[transition_indices, "Total Time"].tolist()
+    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    print(data_no_dupes)
+    return data_no_dupes
+
     
     return extracted_values
 
