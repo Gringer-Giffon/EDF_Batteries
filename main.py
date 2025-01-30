@@ -338,6 +338,38 @@ def plot_soc(cell,test):
     plt.ylabel("SOC (%)")
     plt.title("State of Charge vs Time")
 
+def find_OCV(cell, test):
+    """
+    Parameters: cell (str) C or D, 
+                test (str) in the form of 01, 02, etc...
+                
+    Returns a list of different times that the circuit has reached OCV
+    """
+    
+    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    print(data_no_dupes)
+    return data_no_dupes
+
+def soc_ocv(cell, test):
+
+    df_pre = pd.DataFrame(data = {"Total Time":extract(cell,test)["Total Time"], "SoC":soc_full_c(str(test))})
+    
+    col1 = find_OCV(str(cell),str(test))["Total Time"]
+    col2 = find_OCV(str(cell),str(test))["Current"]
+    col3 = find_OCV(str(cell),str(test))["Voltage"]
+    if cell == "C": 
+        col4 = df_pre["SoC"][df_pre["Total Time"].isin(col1)]
+    elif cell =="D":
+        col4 = df_pre["SoC"][df_pre["Total Time"].isin(col1)]
+    else:
+        print("Invalid cell")
+        return None
+
+    d = {"Total Time": col1, "Current": col2, "Voltage": col3, "SoC": col4}
+    df = pd.DataFrame(data=d)
+
+    print(df)
 
 if __name__ == '__main__':
     '''
@@ -346,6 +378,7 @@ if __name__ == '__main__':
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
     '''
+    soc_ocv("C", "01")
     # ocv_voltage()
     plt.show()
 

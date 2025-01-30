@@ -484,8 +484,22 @@ if __name__ == '__main__':
     # look at C
 
 
+def soc_ocv(cell, test):
 
+    col1 = extract(str(cell), str(test))["Total Time"]
+    col2 = extract(str(cell), str(test))["Current"]
+    col3 = extract(str(cell), str(test))["Voltage"]
+    if cell == "C": 
+        col4 = soc_full_c(str(test))
+    elif cell =="D":
+        col4 = soc_full_d(str(test))
+    else:
+        print("Invalid cell")
+        return None
 
+    d = {"Total Time": col1, "Current": col2, "Voltage": col3, "SoC": col4}
+    df = pd.DataFrame(data=d)
 
+    print(df)
 
 

@@ -270,11 +270,10 @@ def find_OCV(cell, test):
     """
     
     data = extract(cell, test)[extract(cell,test)["Step"] == 5]
-    
-    
-    
-    print(data)
-    data_voltage = data["Voltage"]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    print(data_no_dupes)
+    return data_no_dupes
+
     
     total_time = len(data_voltage)
 
