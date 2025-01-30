@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import main
-
+import Tianhe_csvPlot as tianhe
 
 folderPath = f'./cells_data'
 
@@ -66,6 +66,14 @@ for element in data:
     else:
         pass
 """
+
+
+tianhe.c_locate_ABCD_n()
+
+
+
+
+
 plt.plot(main.extract_step(21,24,"D", "01")["Total Time"], soc_d("01"))  
 plt.show()
 

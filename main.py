@@ -133,9 +133,9 @@ def plot_step(first, second, cell, test):
 
 def q_initial(cell):
     if cell == "C":
-        data = extract_step(26,27,"C", "00")
+        data = extract_step(26, 27, "C", "00")
     elif cell == "D":
-        data = extract_step(21,23,"D", "00")
+        data = extract_step(21, 23, "D", "00")
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
@@ -277,7 +277,7 @@ def soh(cell, test):
 
     # Calculate Q remaining
     Q_remaining = I*t/3600
-    
+
     q_init = q_initial(cell)
 
     SOH = Q_remaining / q_init
@@ -294,9 +294,9 @@ def plot_soh(cell):
     soh_s = []
     for i in range(0, 13+1):
         if i < 10:
-            soh_s.append(soh(cell,"0"+str(i)))
+            soh_s.append(soh(cell, "0"+str(i)))
         else:
-            soh_s.append(soh(cell,str(i)))
+            soh_s.append(soh(cell, str(i)))
 
     # Plotting
     plt.plot(list(range(0, 13+1)), soh_s)
@@ -317,7 +317,8 @@ def ocv_voltage():
     print(soc_ocv_v)
     return None
 
-def plot_soc(cell,test):
+
+def plot_soc(cell, test):
     '''
     Parameters : cell (string) C or D, test (string) in the form 00, 01, etc..
 
@@ -331,42 +332,51 @@ def plot_soc(cell,test):
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
-    
+
     # Plotting
-    plt.plot(extract(cell,test)["Total Time"],soc)
+    plt.plot(extract(cell, test)["Total Time"], soc)
     plt.xlabel("Time (s)")
     plt.ylabel("SOC (%)")
     plt.title("State of Charge vs Time")
+
 
 def find_OCV(cell, test):
     """
     Parameters: cell (str) C or D, 
                 test (str) in the form of 01, 02, etc...
-                
+
     Returns a list of different times that the circuit has reached OCV
     """
-    
-    data = extract(cell, test)[extract(cell,test)["Step"] == 5]
+    '''
+    data = extract(cell,test)[extract(cell,test)["Step"]==5]
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
-    print(data_no_dupes)
+    '''
+    data = extract(cell, test)[extract(cell, test)["Current"] == 0]
+    # change threshhold for more values of SoC, doesnt work for C! because current is never really equal to 0 (rarely)
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 600)]
+    # print(data_no_dupes)
     return data_no_dupes
+
 
 def soc_ocv(cell, test):
 
-    df_pre = pd.DataFrame(data = {"Total Time":extract(cell,test)["Total Time"], "SoC":soc_full_d(str(test))})
+    df_pre = pd.DataFrame(data={"Total Time": extract(cell, test)[
+                          "Total Time"], "SoC": soc_full_d(str(test))})
     print(df_pre)
-    #plt.plot(df_pre["Total Time"], df_pre["SoC"])
-    #plt.show()
+    # plt.plot(df_pre["Total Time"], df_pre["SoC"])
+    # plt.show()
 
-    col1 = find_OCV(str(cell),str(test))["Total Time"]
-    col2 = find_OCV(str(cell),str(test))["Current"]
-    col3 = find_OCV(str(cell),str(test))["Voltage"]
+    col1 = find_OCV(str(cell), str(test))["Total Time"]
+    col2 = find_OCV(str(cell), str(test))["Current"]
+    col3 = find_OCV(str(cell), str(test))["Voltage"]
     print("here:")
     print(col1)
-    if cell == "C": 
-        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0] if i in df_pre["Total Time"].values else np.nan for i in col1]
-    elif cell =="D":
-        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0] if i in df_pre["Total Time"].values else np.nan for i in col1]
+    if cell == "C":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
+    elif cell == "D":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
     else:
         print("Invalid cell")
         return None
@@ -375,10 +385,8 @@ def soc_ocv(cell, test):
     df = pd.DataFrame(data=d)
 
     print(df)
-    plt.plot(df["Voltage"], df["SoC"],"+")
-    
-    
-    
+    plt.plot(df["Voltage"], df["SoC"], "+")
+
 
 if __name__ == '__main__':
     '''
@@ -387,22 +395,33 @@ if __name__ == '__main__':
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
     '''
+
     for i in range(0, 1):
         if i < 10:
             soc_ocv("D", "0"+str(i))
         else:
             soc_ocv("D", str(i))
-    
+
     # ocv_voltage()
     plt.xlabel("OCV (V)")
     plt.ylabel("SoC (%)")
     plt.title("SoC vs OCV")
-    #plt.text(x=0,y=0,s=str(soh("D","00")))
+    # plt.text(x=0,y=0,s=str(soh("D","00")))
     plt.show()
 
-    #look at C
-    #reorganise files
-    #make stuff available for cell C
-    #find R0
+    '''
+    plot_test("D","01")
+
+    data = extract("D", "01")[extract("D","01")["Current"] == 0.0]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    print(data,data_no_dupes)
     
+    plt.show()
+    '''
+
+
     
+    # look at C
+    # reorganise files
+    # make stuff available for cell C
+    # find R0
