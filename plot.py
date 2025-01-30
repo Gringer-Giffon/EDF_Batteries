@@ -122,7 +122,7 @@ def plot_soc(cell, test):
 def soc_ocv(cell, test):
 
     df_pre = pd.DataFrame(data={"Total Time": dt.extract(cell, test)[
-                          "Total Time"], "SoC": dt.soc_full_d(str(test))})
+                          "Total Time"], "SoC": dt.soc(str(cell),str(test))})
     print(df_pre)
     # plt.plot(df_pre["Total Time"], df_pre["SoC"])
     # plt.show()

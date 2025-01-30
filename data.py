@@ -137,17 +137,27 @@ def find_OCV(cell, test):
 
     Returns a list of different times that the circuit has reached OCV
     """
+    
     '''
     data = extract(cell,test)[extract(cell,test)["Step"]==5]
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
     '''
+    if cell == "D":
+        time_between_dupes = 600 #allows reduction of measurement points on graph
+    elif cell == "C":
+        time_between_dupes = 300
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
     data = extract(cell, test)[extract(cell, test)["Current"] == 0]
-    # change threshhold for more values of SoC, doesnt work for C! because current is never really equal to 0 (rarely)
-    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 600)]
-    # print(data_no_dupes)
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < time_between_dupes)]
     return data_no_dupes
 
 
 if __name__ == "__main__":
-    pt.plot_soc("C", "01")
+
+    
+
+    pt.soc_ocv("C", "01")
+    pt.soc_ocv("D", "01")
     plt.show()
