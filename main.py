@@ -131,8 +131,14 @@ def plot_step(first, second, cell, test):
     return None
 
 
-def q_initial_d():
-    data = extract_step(21, 23, "D", "00")
+def q_initial(cell):
+    if cell == "C":
+        data = extract_step(26,27,"C", "00")
+    elif cell == "D":
+        data = extract_step(21,23,"D", "00")
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -233,7 +239,7 @@ def soc_d(test):
     Returns list of SOC values in the full discharge phase for cell D
     '''
 
-    data = extract_step(21, 24, "D", test)
+    data = extract_step(21, 23, "D", test)
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -250,15 +256,20 @@ def soc_d(test):
     return SOC
 
 
-def soh(test):
+def soh(cell, test):
     '''
     Parameters: test (string) in the form 00, 01, etc..
 
     Calculates the state of health of a cell at a given time 
     Returns SOH value of test
     '''
-
-    data = extract_step(21, 23, "D", test)
+    if cell == "C":
+        data = extract_step(26, 27, "C", test)
+    elif cell == "D":
+        data = extract_step(21, 23, "D", test)
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
 
     # Calculate I and t
     I = abs(data["Current"].mean())
@@ -266,14 +277,15 @@ def soh(test):
 
     # Calculate Q remaining
     Q_remaining = I*t/3600
-    q_initial = q_initial_d()
+    
+    q_init = q_initial(cell)
 
-    SOH = Q_remaining / q_initial
-    print(Q_remaining, q_initial)
+    SOH = Q_remaining / q_init
+    print(Q_remaining, q_init)
     return SOH
 
 
-def plot_soh_d():
+def plot_soh(cell):
     '''
     Plots the SOH for cell D
     Returns nothing
@@ -282,10 +294,15 @@ def plot_soh_d():
     soh_s = []
     for i in range(0, 13+1):
         if i < 10:
-            soh_s.append(soh("0"+str(i)))
+            soh_s.append(soh(cell,"0"+str(i)))
         else:
-            soh_s.append(soh(str(i)))
+            soh_s.append(soh(cell,str(i)))
+
+    # Plotting
     plt.plot(list(range(0, 13+1)), soh_s)
+    plt.xlabel("Test Number")
+    plt.ylabel("SOH (%)")
+    plt.title("State of Health vs Test Number")
 
 
 def ocv_voltage():
@@ -300,15 +317,38 @@ def ocv_voltage():
     print(soc_ocv_v)
     return None
 
+def plot_soc(cell,test):
+    '''
+    Parameters : cell (string) C or D, test (string) in the form 00, 01, etc..
+
+    Plots the state of charge of given cell for the given test
+    Returns nothing
+    '''
+    if cell == "C":
+        soc = soc_full_c(test)
+    elif cell == "D":
+        soc = soc_full_d(test)
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
+    
+    # Plotting
+    plt.plot(extract(cell,test)["Total Time"],soc)
+    plt.xlabel("Time (s)")
+    plt.ylabel("SOC (%)")
+    plt.title("State of Charge vs Time")
+
 
 if __name__ == '__main__':
+    '''
     data = extract("D", "02")
     soc = soc_full_d("02")
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
+    '''
     # ocv_voltage()
     plt.show()
 
-    # soh decreases only very slightly, we should find a more robust/precise way of calculating
-    # OCV, how does it correspond to a specific SoC
-    # look at C
+    #look at C
+
+    
