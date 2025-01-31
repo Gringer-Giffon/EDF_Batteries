@@ -23,8 +23,7 @@ def quadratic_model(x, a, b, c):
 def cubic_model(x, a, b, c, d):
     return a * x ** 3 + b * x ** 2 + c * x * d
 
-def deg4_model(x, a, b, c, d, e):
-    return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
+
 
 def deg5_model(x, a, b, c, d, e, f):
     return a * x ** 5 + b * x ** 4 + c * x ** 3 + d * x ** 2 + e * x + f
@@ -67,6 +66,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.polynomial.polynomial import Polynomial
 import plot as pt
+import data as dt
 
 # Example Data (Replace with your actual OCV and SoC arrays)
 ocv = pt.soc_ocv("C", "06")["OCV"]
@@ -84,8 +84,8 @@ fitted_soc = polynomial(ocv_range)
 
 
 def soc_ocv_fitted(cell,test):
-    ocv = pt.soc_ocv(cell, test)["OCV"]
-    soc = pt.soc_ocv(cell, test)["SoC"] 
+    soc = pt.soc_ocv(cell, test)["OCV"]
+    ocv = pt.soc_ocv(cell, test)["SoC"] 
 
     # Fit a polynomial of degree 2
     coefficients = np.polyfit(ocv, soc, 4)
@@ -96,11 +96,15 @@ def soc_ocv_fitted(cell,test):
     fitted_soc = polynomial(ocv_range)
     return coefficients
 
+def deg4_model(x, a, b, c, d, e):
+    return e * x ** 4 + d * x ** 3 + c * x ** 2 + b * x + a
+
 def calculate_ocv(soc,cell,test):
     coefficients = soc_ocv_fitted(cell,test)
-    return soc
+    return [deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc]
 
 # Plot the original data and the polynomial fit
+print(calculate_ocv(dt.soc("C","06"),"C","06"))
 print(soc_ocv_fitted("C","06"))
 plt.scatter(ocv, soc, label="Data points")
 plt.plot(ocv_range, fitted_soc, color="red", label=f"Polynomial fit: degree 4")

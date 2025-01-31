@@ -147,6 +147,7 @@ def soc_ocv(cell, test):
 
     print(df)
     plt.plot(df["OCV"], df["SoC"], "+")
+    df.to_csv("ocv_data")
     return df
 
 
@@ -157,13 +158,14 @@ if __name__ == '__main__':
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
     '''
-
+    soc_ocv("C","06")
+    """
     for i in range(0, 1):
         if i < 10:
             soc_ocv("D", "0"+str(i))
         else:
             soc_ocv("D", str(i))
-
+    """
     # ocv_voltage()
     plt.xlabel("OCV (V)")
     plt.ylabel("SoC (%)")

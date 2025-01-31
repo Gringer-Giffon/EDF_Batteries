@@ -35,7 +35,7 @@ def R0_calc_all(R0):
             A1, B1, C1, D1, A2, B2, C2, D2 = csvp.c_locate_ABCD_n(dfc, i, j+1)
             R = calc_R0_cell_C(A1[1], B1[1], C1[1], D1[1],
                                A2[1], B2[1], C2[1], D2[1], 32)
-            R0.append(R)
+            R0.append(R) #* 10 works well
             pos += 1
     return start_indices
 
