@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import Tianhe_csvPlot as csvp
+import data as dt
 
 myList = []
 
@@ -22,6 +23,8 @@ region = []
 
 def calc_R0_cell_C(A1, B1, C1, D1, A2, B2, C2, D2, I):
     return 0.25*(A1-B1 + D1-C1 + B2-A2 + C2-D2)/I
+    #print(A1, B1, C1, D1, I)
+    #return ((abs(A1-B1))/abs(I), (abs(C1-D1))/abs(I))
 
 
 def R0_calc_all(R0):
@@ -34,9 +37,9 @@ def R0_calc_all(R0):
         for j in range(len(start_indices)-1):
             A1, B1, C1, D1, A2, B2, C2, D2 = csvp.c_locate_ABCD_n(dfc, i, j+1)
             R = calc_R0_cell_C(A1[1], B1[1], C1[1], D1[1],
-                               A2[1], B2[1], C2[1], D2[1], 32)
-            R0.append(R) #* 10 works well
-            pos += 1
+                               A2[1], B2[1], C2[1], D2[1], 32)  # current is constant at 32..
+            R0.append(R)
+            pos += 1  # need to set a time limit on recording resistance
     return start_indices
 
 
@@ -53,17 +56,16 @@ def R0_fill(dfc):
             x, t_e = csvp.locate(df, 15, i+1)
             start = df.index[df['Total Time'] == t_s][0]
             end = df.index[df['Total Time'] == t_e][0]
-            """
+
             if i == 0:
                 df.loc[0:end, 'R0'] = R0[j]
             elif i == len(start_indices)-2:
                 df.loc[start:len(df)-1, 'R0'] = R0[j]
             else:
                 df.loc[start:end, 'R0'] = R0[j]
-            """
-            df.loc[start:end, 'R0'] = R0[j]
+
+            # df.loc[start:end, 'R0'] = R0[j]
             j += 1
-            
 
             if i == 0:
                 startregion.append(start)

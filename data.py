@@ -180,17 +180,22 @@ def add_R0_c(test):
 
 
 def soc_ocv_fitted(cell, test):
+    '''
+    Parameters: cell (string), test (string)
+
+    Returns coefficients of fitted polynomial between SoC and OCV
+    '''
     soc = pt.soc_ocv(cell, test)["OCV"]
     ocv = pt.soc_ocv(cell, test)["SoC"]
 
-    # Fit a polynomial of degree 2
+    # Fit a polynomial of degree 4
     coefficients = np.polyfit(ocv, soc, 4)
     polynomial = np.poly1d(coefficients)
 
     # Generate fitted values for plotting
     # ocv_range = np.linspace(min(ocv), max(ocv), 100)
-    fitted_soc = polynomial(ocv)
-    print(coefficients)
+    #fitted_soc = polynomial(ocv)
+    
     return coefficients
 
 
@@ -199,9 +204,15 @@ def deg4_model(x, a, b, c, d, e):
 
 
 def calculate_ocv(soc, cell, test):
+    '''
+    Parameters: soc (list) soc values, cell (string), test (string)
+
+    Returns list of calculated OCV values using the polynomial relation between OCV and SoC
+    '''
+
     coefficients = soc_ocv_fitted(cell, test)
     # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
-    print("soc: ")
+    
     """
     print(pt.soc_ocv(cell, test)["SoC"])
     plt.plot()
@@ -210,30 +221,62 @@ def calculate_ocv(soc, cell, test):
 
 
 def add_ocv_c(test):
+    '''
+    Parameters: test(string), cell test
+
+    Returns dataframe containing OCV for cell c
+    '''
+
     df = add_R0_c(test)
     df["OCV"] = calculate_ocv(df["SoC"], "C", test)
     return df
 
-
-def order_zero(cell, test):
-    pass
-
-
 def calculate_model_voltage_c(test):
+    '''
+    Parameters: test(string), cell test
+
+    Returns dataframe containing model voltage for 0th order Thevenin for cell C
+    '''
+
     df = add_ocv_c(test)
     df["Model Voltage"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
                            * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
+def plot_r_soc(test):
+    '''
+    Parameters: test(string) test number
+    
+    Plots R as a function of SoC
+    Returns nothing
+    '''
+
+    df = calculate_model_voltage_c(test)
+    
+    print(df)
+    plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
+    plt.show()
+
+def calc_r0(test):
+    
+    r0 = [abs(add_ocv_c(test)["OCV"].iloc[i]-add_ocv_c(test)["Voltage"].iloc[i]) for i in range(len(add_ocv_c(test)))]
+    return r0
+
 
 if __name__ == "__main__":
     # print(soc("C","01"))
+    
+    
     df = calculate_model_voltage_c("09")
-    print(df)
-    plt.plot(df["SoC"], df["R0"])  # should be upside down U
-    plt.show()
-
     """
+    df.to_csv("r0")
+    df = df[~np.isnan(df["R0"])]
+    print(df)
+    plt.plot(df["SoC"], df["R0"],"x")  # should be upside down U
+    plt.show()
+    """
+    #print(calc_r0("04"))
+    
     df.to_csv("0th_model_data")
     fig, axs = plt.subplots(2,1)
     axs[0].plot(df["Total Time"],df["Model Voltage"])
@@ -250,4 +293,4 @@ if __name__ == "__main__":
     pt.soc_ocv("D", "01")
     plt.show()
     '''
-    """
+    
