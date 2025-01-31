@@ -23,8 +23,8 @@ region = []
 
 def calc_R0_cell_C(A1, B1, C1, D1, A2, B2, C2, D2, I):
     return 0.25*(A1-B1 + D1-C1 + B2-A2 + C2-D2)/I
-    #print(A1, B1, C1, D1, I)
-    #return ((abs(A1-B1))/abs(I), (abs(C1-D1))/abs(I))
+    # print(A1, B1, C1, D1, I)
+    # return ((abs(A1-B1))/abs(I), (abs(C1-D1))/abs(I))
 
 
 def R0_calc_all(R0):
@@ -75,6 +75,28 @@ def R0_fill(dfc):
         startregion = []
         # plt.plot(df['Total Time'], df['R0'])
         # plt.show()
+
+
+def R0_replace(df):
+    R0 = []
+    start_indices = R0_calc_all(R0)
+    j = 0
+    startregion = []
+
+    for i in range(len(start_indices)-1):
+        t_s, x = csvp.locate(df, 15, i)
+        x, t_e = csvp.locate(df, 15, i+1)
+        start = df.index[df['Total Time'] == t_s][0]
+        end = df.index[df['Total Time'] == t_e][0]
+
+        df.loc[start:end, 'R0'] = R0[j]
+
+        j += 1
+
+        if i == 0:
+            startregion.append(start)
+        elif i == len(start_indices)-2:
+            startregion.append(end)
 
 
 if __name__ == '__main__':

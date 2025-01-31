@@ -171,11 +171,25 @@ def add_R0_c(test):
     Returns dataframe with original data and SoC and R0
 
     '''
-    rz.R0_fill(dfc)
-    R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
+
     df = extract("C", test)
     df["SoC"] = soc("C", test)
+    df["OCV"] = calculate_ocv(soc("C", test), "C", test)
+    print(df)
+    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1.5 else 0)
+          for i in range(len(df["Current"]))]
+
+    rz.R0_fill(dfc)
+    # print(df, '\n')
+    # R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
+
+    # df["SoC"] = soc("C", test)
     df["R0"] = R0
+    print('original data \n\n', df, '\n\n')
+    df["R0"].to_csv("resistance")
+
+    # rz.R0_replace(df)
+    # print(df, '\n')
     return df
 
 
@@ -194,13 +208,9 @@ def soc_ocv_fitted(cell, test):
 
     # Generate fitted values for plotting
     # ocv_range = np.linspace(min(ocv), max(ocv), 100)
-    #fitted_soc = polynomial(ocv)
-    
-    return coefficients
+    # fitted_soc = polynomial(ocv)
 
-
-def deg4_model(x, a, b, c, d, e):
-    return e * x ** 4 + d * x ** 3 + c * x ** 2 + b * x + a
+    return polynomial
 
 
 def calculate_ocv(soc, cell, test):
@@ -212,12 +222,14 @@ def calculate_ocv(soc, cell, test):
 
     coefficients = soc_ocv_fitted(cell, test)
     # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
-    
+
     """
     print(pt.soc_ocv(cell, test)["SoC"])
     plt.plot()
     """
-    return [deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]) for soc in soc]
+    poly = soc_ocv_fitted(cell, test)
+    return [poly(soc) for soc in soc]
+    # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for soc in soc]
 
 
 def add_ocv_c(test):
@@ -231,6 +243,7 @@ def add_ocv_c(test):
     df["OCV"] = calculate_ocv(df["SoC"], "C", test)
     return df
 
+
 def calculate_model_voltage_c(test):
     '''
     Parameters: test(string), cell test
@@ -243,54 +256,55 @@ def calculate_model_voltage_c(test):
                            * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
+
 def plot_r_soc(test):
     '''
     Parameters: test(string) test number
-    
+
     Plots R as a function of SoC
     Returns nothing
     '''
 
     df = calculate_model_voltage_c(test)
-    
-    print(df)
-    plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
-    plt.show()
+
+    # plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
+    # plt.show()
+
 
 def calc_r0(test):
-    
-    r0 = [abs(add_ocv_c(test)["OCV"].iloc[i]-add_ocv_c(test)["Voltage"].iloc[i]) for i in range(len(add_ocv_c(test)))]
+    r0 = [abs(add_ocv_c(test)["OCV"].iloc[i]-add_ocv_c(test)["Voltage"].iloc[i])
+          for i in range(len(add_ocv_c(test)))]
     return r0
 
 
 if __name__ == "__main__":
     # print(soc("C","01"))
-    
-    
-    df = calculate_model_voltage_c("09")
-    """
+
+    df = calculate_model_voltage_c("03")
+    fig, axs = plt.subplots(3, 1)
+    axs[0].plot(df["Total Time"], df["Voltage"])
     df.to_csv("r0")
     df = df[~np.isnan(df["R0"])]
     print(df)
-    plt.plot(df["SoC"], df["R0"],"x")  # should be upside down U
+    axs[2].plot(df["Total Time"], df["OCV"])
+    axs[1].plot(df["Total Time"], df["R0"])  # should be upside down U
     plt.show()
-    """
-    #print(calc_r0("04"))
-    
+
+    plt.plot(df["SoC"], df["R0"], 'o')
+    plt.show()
+    # print(calc_r0("04"))
+
     df.to_csv("0th_model_data")
-    fig, axs = plt.subplots(2,1)
-    axs[0].plot(df["Total Time"],df["Model Voltage"])
+    fig, axs = plt.subplots(2, 1)
+    axs[0].plot(df["Total Time"], df["Model Voltage"])
     axs[0].set_title("Model Voltage vs Time")
-    axs[1].plot(df["Total Time"],df["Voltage"])
+    axs[1].plot(df["Total Time"], df["Voltage"])
     axs[1].set_title("Voltage vs Time")
 
     plt.show()
-    
 
-    print(df)
     '''
     pt.soc_ocv("C", "05")
     pt.soc_ocv("D", "01")
     plt.show()
     '''
-    
