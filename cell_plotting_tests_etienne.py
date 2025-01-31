@@ -1,79 +1,119 @@
+"""
+#_______________________________________________________________________
+
 import numpy as np
-import pandas as pd
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-import os
-import main
-import Tianhe_csvPlot as tianhe
-
-folderPath = f'./cells_data'
-
-# dataframes = [pd.read_csv(file) for file in os.listdir(folderPath)]
-
-"""
-time = data["Total Time"]
-current = data["Current"]
-voltage = data["Voltage"]
-step = data["Step"]
-"""
-
-print(main.extract("C", "01")["Step"])
-
-
-# Q remaining is the integral of I on a full discharge
-# Q available at a time tis the difference between the Q remaining and the integral of Q up to t
-
-def soc_d(test):
-    '''
-    Parameters: test (string) in the form 00, 01, etc..
-    
-    Calculates the state of charge of D cell at a given time for the discharge at the end of the test
-    Returns list of SOC values
-    '''
-
-    data = main.extract_step(21, 24, "D", test)
-
-    #Calculate I and t
-    I = abs(data["Current"].mean())
-    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
-
-    #Calculate Q remaining and Q available
-    Q_remaining = I*t/3600
-    
-
-    Q_available = [Q_remaining - I*(data["Total Time"].iloc[i] -
-                                    data["Total Time"].iloc[0])/3600 for i in range(len(data["Total Time"]))]
-
-    
-    SOC = [Q_available[i]/Q_remaining for i in range(len(data["Total Time"]))]
-    
-    """
-    soc_voltage_dict = {
-        data["Voltage"].iloc[i]: Q_available[i] / Q_remaining
-        for i in range(len(data["Total Time"]))}
-    """
-
-    return SOC
-
-
-# if we then associate a State of Charge to voltage, it should be okay right, because there is a direct relationship between the OCV and SoC
-data = main.extract("D", "01")["Voltage"]
-SOC = []
-"""
-for element in data:
-    if element in soc_d("01")[1].keys():
-
-        SOC.append(soc_d("01")[1][element])
-    else:
-        pass
-"""
-
-
-tianhe.c_locate_ABCD_n()
+import plot as pt
+from sklearn.linear_model import LinearRegression
 
 
 
+# Define the model function
+
+def constant_model(x, a):
+    return a
+
+def linear_model(x, a, b):
+    return a * x + b
+
+def quadratic_model(x, a, b, c):
+    return a * x ** 2 + b * x + c
+
+def cubic_model(x, a, b, c, d):
+    return a * x ** 3 + b * x ** 2 + c * x * d
+
+def deg4_model(x, a, b, c, d, e):
+    return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
+
+def deg5_model(x, a, b, c, d, e, f):
+    return a * x ** 5 + b * x ** 4 + c * x ** 3 + d * x ** 2 + e * x + f
+
+def deg6_model(x, a, b, c, d, e, f, g):
+    return a * x ** 6 + b * x ** 5 + c * x ** 4 + d * x ** 3 + e * x ** 2 + f * x + g
+
+def deg7_model(x, a, b, c, d, e, f, g, h):
+    return a * x ** 7 + b * x ** 6 + c * x ** 5 + d * x ** 4 + e * x ** 3 + f * x ** 2 + g * x + h
+
+def deg8_model(x, a, b, c, d, e, f, g, h, i):
+    return a * x ** 8 + b * x ** 7 + c * x ** 6 + d * x ** 5 + e * x ** 4 + f * x ** 3 + g * x ** 2 + h * x + i
 
 
-plt.plot(main.extract_step(21,24,"D", "01")["Total Time"], soc_d("01"))  
+polynomials = [constant_model, linear_model, quadratic_model, 
+               cubic_model, deg4_model, deg5_model, 
+               deg6_model, deg7_model, deg8_model]
+
+
+
+# Generate some data
+print(pt.soc_ocv("C","06"))
+x_data = pt.soc_ocv("C","06")["OCV"]
+
+y_data = pt.soc_ocv("C","06")["SoC"]
+
+# Fit the model to the data
+params, covariance = curve_fit(cubic_model, x_data, y_data)
+
+y_data_check = params[3] + params[2] * x_data + params[1] * x_data**2 + params[0] * x_data**3
+
+# Output the parameters
+print("Fitted parameters:", params)
+plt.plot(x_data, y_data, "ro")
+plt.plot(x_data, y_data_check, "b--")
 plt.show()
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from numpy.polynomial.polynomial import Polynomial
+import plot as pt
+
+# Example Data (Replace with your actual OCV and SoC arrays)
+ocv = pt.soc_ocv("C", "06")["OCV"]
+
+# Replace with your OCV
+soc = pt.soc_ocv("C", "06")["SoC"]  # Replace with your SoC values
+
+# Fit a polynomial of degree 2
+coefficients = np.polyfit(ocv, soc, 4)
+polynomial = np.poly1d(coefficients)
+
+# Generate fitted values for plotting
+ocv_range = np.linspace(min(ocv), max(ocv), 100)
+fitted_soc = polynomial(ocv_range)
+
+
+def soc_ocv_fitted(cell,test):
+    ocv = pt.soc_ocv(cell, test)["OCV"]
+    soc = pt.soc_ocv(cell, test)["SoC"] 
+
+    # Fit a polynomial of degree 2
+    coefficients = np.polyfit(ocv, soc, 4)
+    polynomial = np.poly1d(coefficients)
+
+    # Generate fitted values for plotting
+    ocv_range = np.linspace(min(ocv), max(ocv), 100)
+    fitted_soc = polynomial(ocv_range)
+    return coefficients
+
+def calculate_ocv(soc,cell,test):
+    coefficients = soc_ocv_fitted(cell,test)
+    return soc
+
+# Plot the original data and the polynomial fit
+print(soc_ocv_fitted("C","06"))
+plt.scatter(ocv, soc, label="Data points")
+plt.plot(ocv_range, fitted_soc, color="red", label=f"Polynomial fit: degree 4")
+plt.title("SoC vs OCV with Polynomial Fit")
+plt.xlabel("OCV (V)")
+plt.ylabel("SoC (%)")
+plt.legend()
+plt.show()
+
+
+
+
+
+
+
 

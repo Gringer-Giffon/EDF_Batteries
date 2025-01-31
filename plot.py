@@ -142,11 +142,12 @@ def soc_ocv(cell, test):
         print("Invalid cell")
         return None
 
-    d = {"Total Time": col1, "Current": col2, "Voltage": col3, "SoC": col4}
+    d = {"Total Time": col1, "Current": col2, "OCV": col3, "SoC": col4}
     df = pd.DataFrame(data=d)
 
     print(df)
-    plt.plot(df["Voltage"], df["SoC"], "+")
+    plt.plot(df["OCV"], df["SoC"], "+")
+    return df
 
 
 if __name__ == '__main__':
