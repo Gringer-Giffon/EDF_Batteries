@@ -4,11 +4,18 @@ import matplotlib.pyplot as plt
 import os
 from scipy.integrate import cumulative_trapezoid
 import plot as pt
+import R0_identification_tianhe as rz
 
 
-directory = f"./cells_data"
-csv_files = [f for f in os.listdir(directory)]
+folderPath = f'./cells_data'
 
+csv_files = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
+
+csvFiles_C = [f for f in csv_files if '_C_' in f]
+csvFiles_D = [f for f in csv_files if '_D_' in f]
+
+dfc = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_C]      # Dataframes for Cell C
+dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
 
 def extract(cell, test):
     '''
@@ -18,7 +25,7 @@ def extract(cell, test):
     Returns dataframe of extracted data
     '''
 
-    file = [pd.read_csv(os.path.join(directory, f))
+    file = [pd.read_csv(os.path.join(folderPath, f))
             for f in csv_files if '_'+(str(cell).upper())+"_" in f and str(test) in f]
     data = pd.concat(file)  # dataframe of corresponding csv data
 
@@ -137,7 +144,7 @@ def find_OCV(cell, test):
 
     Returns a list of different times that the circuit has reached OCV
     """
-    
+
     '''
     data = extract(cell,test)[extract(cell,test)["Step"]==5]
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
@@ -145,7 +152,7 @@ def find_OCV(cell, test):
     if cell == "D":
         time_between_dupes = 600 #allows reduction of measurement points on graph
     elif cell == "C":
-        time_between_dupes = 300
+        time_between_dupes = 350
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
@@ -154,10 +161,32 @@ def find_OCV(cell, test):
     return data_no_dupes
 
 
+def add_R0_c(test):
+    '''
+    Parameters: test (int) test number
+
+    Returns dataframe with original data and SoC and R0
+
+    '''
+    rz.R0_fill(dfc)
+    R0 = dfc[int(test)]["R0"] #complete R0 column for given test
+    df = extract("C",test)
+    print(df)
+    df["SoC"] = soc("C",test)
+    df["R0"] = R0
+    return df
+
+def order_zero(cell,test):
+    pass
+
+
+
 if __name__ == "__main__":
-
-    
-
-    pt.soc_ocv("C", "01")
+    #print(soc("C","01"))
+    df = add_R0_c("01")
+    print(df)
+    '''
+    pt.soc_ocv("C", "05")
     pt.soc_ocv("D", "01")
     plt.show()
+    '''
