@@ -146,7 +146,7 @@ def soc_ocv(cell, test):
     df = pd.DataFrame(data=d)
 
     print(df)
-    #plt.plot(df["OCV"], df["SoC"], "+")
+    plt.plot( df["SoC"],df["OCV"], "+")
     df.to_csv("ocv_data")
     return df
 

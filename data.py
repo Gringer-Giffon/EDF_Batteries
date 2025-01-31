@@ -164,7 +164,7 @@ def find_OCV(cell, test):
     return data_no_dupes
 
 
-def add_R0_c(test):
+def add_R0(cell,test):
     '''
     Parameters: test (int) test number
 
@@ -172,14 +172,14 @@ def add_R0_c(test):
 
     '''
 
-    df = extract("C", test)
-    df["SoC"] = soc("C", test)
-    df["OCV"] = calculate_ocv(soc("C", test), "C", test)
+    df = extract(cell, test)
+    df["SoC"] = soc(cell, test)
+    df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
     print(df)
-    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1.5 else 0)
+    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 2 else 0)
           for i in range(len(df["Current"]))]
 
-    rz.R0_fill(dfc)
+    #rz.R0_fill(dfc)
     # print(df, '\n')
     # R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
 
@@ -203,7 +203,7 @@ def soc_ocv_fitted(cell, test):
     ocv = pt.soc_ocv(cell, test)["SoC"]
 
     # Fit a polynomial of degree 4
-    coefficients = np.polyfit(ocv, soc, 4)
+    coefficients = np.polyfit(ocv, soc, 5) #4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
     polynomial = np.poly1d(coefficients)
 
     # Generate fitted values for plotting
@@ -232,26 +232,26 @@ def calculate_ocv(soc, cell, test):
     # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for soc in soc]
 
 
-def add_ocv_c(test):
+def add_ocv(cell, test):
     '''
     Parameters: test(string), cell test
 
     Returns dataframe containing OCV for cell c
     '''
 
-    df = add_R0_c(test)
-    df["OCV"] = calculate_ocv(df["SoC"], "C", test)
+    df = add_R0(cell,test)
+    df["OCV"] = calculate_ocv(df["SoC"], cell, test)
     return df
 
 
-def calculate_model_voltage_c(test):
+def calculate_model_voltage(cell,test):
     '''
     Parameters: test(string), cell test
 
     Returns dataframe containing model voltage for 0th order Thevenin for cell C
     '''
 
-    df = add_ocv_c(test)
+    df = add_ocv(cell,test)
     df["Model Voltage"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
                            * df["Current"].iloc[i] for i in range(len(df))]
     return df
@@ -265,10 +265,10 @@ def plot_r_soc(test):
     Returns nothing
     '''
 
-    df = calculate_model_voltage_c(test)
+    df = calculate_model_voltage(test)
 
-    # plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
-    # plt.show()
+    plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
+    plt.show()
 
 
 def calc_r0(test):
@@ -279,8 +279,20 @@ def calc_r0(test):
 
 if __name__ == "__main__":
     # print(soc("C","01"))
+    
 
-    df = calculate_model_voltage_c("03")
+    df = calculate_model_voltage("C","03")
+
+    polynomial = soc_ocv_fitted("D","03")
+    y = [polynomial(soc) for soc in df["SoC"]]
+    pt.soc_ocv("D","03")
+    plt.plot(df["SoC"],y)
+    plt.show()
+
+
+
+
+
     fig, axs = plt.subplots(3, 1)
     axs[0].plot(df["Total Time"], df["Voltage"])
     df.to_csv("r0")
