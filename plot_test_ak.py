@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-
+import plot as pt
 
 
 # Define the model function
@@ -79,11 +79,19 @@ polynomials = [constant_model, linear_model, quadratic_model,
                cubic_model, deg4_model, deg5_model, 
                deg6_model, deg7_model, deg8_model]
 
+
 # Generate some data
-x_data = np.linspace(0, 10, 50)
+#x_data = np.linspace(0, 10, 50)
 
-y_data = 2.5 * x_data + 1.0 + np.random.normal(0, 1, 50)
+#y_data = 2.5 * x_data + 1.0 + np.random.normal(0, 1, 50)
 
+pt.soc_ocv("D", "03")
+
+
+
+
+
+"""
 # Fit the model to the data
 params, covariance = curve_fit(linear_model, x_data, y_data)
 
@@ -94,4 +102,6 @@ print("Fitted parameters:", params)
 plt.plot(x_data, y_data, "ro")
 plt.plot(x_data, y_data_check, "b--")
 plt.show()
+    """
     
+
