@@ -53,13 +53,17 @@ def R0_fill(dfc):
             x, t_e = csvp.locate(df, 15, i+1)
             start = df.index[df['Total Time'] == t_s][0]
             end = df.index[df['Total Time'] == t_e][0]
+            """
             if i == 0:
                 df.loc[0:end, 'R0'] = R0[j]
             elif i == len(start_indices)-2:
                 df.loc[start:len(df)-1, 'R0'] = R0[j]
             else:
                 df.loc[start:end, 'R0'] = R0[j]
+            """
+            df.loc[start:end, 'R0'] = R0[j]
             j += 1
+            
 
             if i == 0:
                 startregion.append(start)

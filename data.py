@@ -14,8 +14,10 @@ csv_files = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
 csvFiles_C = [f for f in csv_files if '_C_' in f]
 csvFiles_D = [f for f in csv_files if '_D_' in f]
 
-dfc = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_C]      # Dataframes for Cell C
+dfc = [pd.read_csv(os.path.join(folderPath, file))
+       for file in csvFiles_C]      # Dataframes for Cell C
 dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
+
 
 def extract(cell, test):
     '''
@@ -150,14 +152,15 @@ def find_OCV(cell, test):
     data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
     '''
     if cell == "D":
-        time_between_dupes = 600 #allows reduction of measurement points on graph
+        time_between_dupes = 600  # allows reduction of measurement points on graph
     elif cell == "C":
         time_between_dupes = 350
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = extract(cell, test)[extract(cell, test)["Current"] == 0]
-    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < time_between_dupes)]
+    data_no_dupes = data.loc[~(
+        data["Total Time"].diff().abs() < time_between_dupes)]
     return data_no_dupes
 
 
@@ -169,54 +172,68 @@ def add_R0_c(test):
 
     '''
     rz.R0_fill(dfc)
-    R0 = dfc[int(test)]["R0"] #complete R0 column for given test
-    df = extract("C",test)
-    df["SoC"] = soc("C",test)
+    R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
+    df = extract("C", test)
+    df["SoC"] = soc("C", test)
     df["R0"] = R0
     return df
 
-def soc_ocv_fitted(cell,test):
+
+def soc_ocv_fitted(cell, test):
     soc = pt.soc_ocv(cell, test)["OCV"]
-    ocv = pt.soc_ocv(cell, test)["SoC"] 
+    ocv = pt.soc_ocv(cell, test)["SoC"]
 
     # Fit a polynomial of degree 2
     coefficients = np.polyfit(ocv, soc, 4)
     polynomial = np.poly1d(coefficients)
 
     # Generate fitted values for plotting
-    #ocv_range = np.linspace(min(ocv), max(ocv), 100)
+    # ocv_range = np.linspace(min(ocv), max(ocv), 100)
     fitted_soc = polynomial(ocv)
     print(coefficients)
     return coefficients
 
-def deg4_model(x, a, b, c, d, e):
-    return e * x ** 4 + d * x ** 3 + c * x** 2 + b * x + a
 
-def calculate_ocv(soc,cell,test):
-    coefficients = soc_ocv_fitted(cell,test)
-    #print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
+def deg4_model(x, a, b, c, d, e):
+    return e * x ** 4 + d * x ** 3 + c * x ** 2 + b * x + a
+
+
+def calculate_ocv(soc, cell, test):
+    coefficients = soc_ocv_fitted(cell, test)
+    # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
     print("soc: ")
+    """
     print(pt.soc_ocv(cell, test)["SoC"])
     plt.plot()
-    ocv_0 = deg4_model(soc[0],coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4])+add_R0_c(test)["R0"].iloc[0]*add_R0_c(test)["Current"].iloc[0]
-    return [ocv_0+ deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4])/10 for soc in soc]
+    """
+    return [deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]) for soc in soc]
+
 
 def add_ocv_c(test):
     df = add_R0_c(test)
-    df["OCV"] = calculate_ocv(df["SoC"],"C",test)
+    df["OCV"] = calculate_ocv(df["SoC"], "C", test)
     return df
 
-def order_zero(cell,test):
+
+def order_zero(cell, test):
     pass
+
 
 def calculate_model_voltage_c(test):
     df = add_ocv_c(test)
-    df["Model Voltage"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]*df["Current"].iloc[i] for i in range(len(df))]
+    df["Model Voltage"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
+                           * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
+
 if __name__ == "__main__":
-    #print(soc("C","01"))
+    # print(soc("C","01"))
     df = calculate_model_voltage_c("09")
+    print(df)
+    plt.plot(df["SoC"], df["R0"])  # should be upside down U
+    plt.show()
+
+    """
     df.to_csv("0th_model_data")
     fig, axs = plt.subplots(2,1)
     axs[0].plot(df["Total Time"],df["Model Voltage"])
@@ -233,3 +250,4 @@ if __name__ == "__main__":
     pt.soc_ocv("D", "01")
     plt.show()
     '''
+    """
