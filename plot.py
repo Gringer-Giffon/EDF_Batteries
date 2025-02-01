@@ -43,6 +43,7 @@ def plot_test(cell, test):
     axs[2].set_title("Step")
 
     plt.subplots_adjust(hspace=1)  # adjust space between plots
+    plt.show()
 
     return None
 
@@ -75,28 +76,43 @@ def plot_step(first, second, cell, test):
     axs[2].set_title("Step")
 
     plt.subplots_adjust(hspace=1)  # adjust space between plots
-
+    plt.show()
     return None
 
 
 def plot_soh(cell):
     '''
-    Plots the SOH for cell D
-    Returns nothing
-    '''
+    Parameters: cell (string), cell "D" or "C"
 
-    soh_s = []
-    for i in range(0, 13+1):
-        if i < 10:
-            soh_s.append(dt.soh(cell, "0"+str(i)))
-        else:
-            soh_s.append(dt.soh(cell, str(i)))
+    Plots SoH as a function of test number for given cell
+    Returns None
+    '''
+    soh = []
+
+    if cell == "D":
+        # Calculating SoH
+        for test in range(0, 13+1):
+            soh_i = dt.soh(cell, test)*100
+            soh.append(soh_i)
+        # Plotting
+        plt.plot(list(range(0, 13+1)), soh)
+    elif cell == "C":
+        # Calculating SoH
+        for test in range(0, 23+1):
+            soh_i = dt.soh(cell, test)*100
+            soh.append(soh_i)
+        # Plotting
+        plt.plot(list(range(0, 23+1)), soh)
+    else:
+        print("Invalid cell entered")
+        return None
 
     # Plotting
-    plt.plot(list(range(0, 13+1)), soh_s)
-    plt.xlabel("Test Number")
+    plt.xlabel("Test number")
     plt.ylabel("SOH (%)")
-    plt.title("State of Health vs Test Number")
+    plt.title("SOH vs Test: cell "+cell)
+    plt.show()
+    return None
 
 
 def plot_soc(cell, test):
@@ -157,41 +173,6 @@ def plot_soc(cell, test):
     return None
 
 
-def plot_soh(cell):
-    '''
-    Parameters: cell (string), cell "D" or "C"
-
-    Plots SoH as a function of test number for given cell
-    Returns None
-    '''
-    soh = []
-
-    if cell == "D":
-        # Calculating SoH
-        for test in range(0,13+1):
-            soh_i = dt.soh(cell,test)*100
-            soh.append(soh_i)
-        # Plotting
-        plt.plot(list(range(0,13+1)),soh)
-    elif cell == "C":
-        # Calculating SoH
-        for test in range(0,23+1):
-            soh_i = dt.soh(cell,test)*100
-            soh.append(soh_i)
-        # Plotting
-        plt.plot(list(range(0,23+1)),soh)
-    else:
-        print("Invalid cell entered")
-        return None
-    
-    # Plotting
-    plt.xlabel("Test number")
-    plt.ylabel("SOH (%)")
-    plt.title("SOH vs Test: cell "+cell)
-    plt.show()
-    return None
-
-
 def plot_soc_ocv(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
@@ -208,7 +189,7 @@ def plot_soc_ocv(cell, test):
     col1 = dt.find_OCV(str(cell), str(test))["Total Time"]
     col2 = dt.find_OCV(str(cell), str(test))["Current"]
     col3 = dt.find_OCV(str(cell), str(test))["Voltage"]
-    
+
     # Selecting respective SoCs for measured OCV points
     if cell == "C":
         col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
@@ -225,7 +206,7 @@ def plot_soc_ocv(cell, test):
     df = pd.DataFrame(data=d)
 
     # Plotting
-    plt.plot(df["SoC"],df["OCV"], "+")
+    plt.plot(df["SoC"], df["OCV"], "+")
     plt.ylabel("OCV (V)")
     plt.xlabel("SoC (% ratio)")
     plt.title("OCV vs SoC: cell "+cell+" test "+test)
@@ -234,8 +215,10 @@ def plot_soc_ocv(cell, test):
 
 
 if __name__ == '__main__':
-    plot_soc_ocv("C","01")
-    plot_soc_ocv("D","01")
+    plot_test("D", "00")
+    plot_test("D", "01")
+    plot_test("D", "02")
+    plot_soh("D")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")

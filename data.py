@@ -59,11 +59,18 @@ def extract_step(first, second, cell, test):
     return step_data
 
 
-def q_initial(cell):
+def q_remaining(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) test number "01","02","10",etc...
+    
+    Returns full discharge capacity for given cell and test
+    '''
+
+    # Extract full discharge data
     if cell == "C":
-        data = extract_step(26, 27, "C", "00")
+        data = extract_step(26, 27, "C", test)
     elif cell == "D":
-        data = extract_step(21, 23, "D", "00")
+        data = extract_step(21, 23, "D", test)
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
@@ -86,20 +93,8 @@ def soc(cell, test):
     '''
 
     data_full = extract(cell, test)
-    if cell == "C":
-        data = extract_step(26, 27, "C", test)
-    elif cell == "D":
-        data = extract_step(21, 23, "D", test)
-    else:
-        print("Invalid cell entry. Cell entry must be C or D")
-        return None
-
-    # Calculate I and t
-    I = abs(data["Current"].mean())
-    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
-
-    # Calculate Q remaining and Q available
-    Q_remaining = I*t/3600
+    
+    Q_remaining = q_remaining(cell,test)
 
     Q_available = [Q_remaining + (cumulative_trapezoid(data_full["Current"], data_full["Total Time"], initial=0)[
                                   i])/3600 for i in range(len(cumulative_trapezoid(data_full["Current"], data_full["Total Time"], initial=0)))]
@@ -117,22 +112,9 @@ def soh(cell, test):
     Calculates the state of health of a cell at a given time 
     Returns SOH value of test
     '''
-    if cell == "C":
-        data = extract_step(26, 27, "C", test)
-    elif cell == "D":
-        data = extract_step(21, 23, "D", test)
-    else:
-        print("Invalid cell entry. Cell entry must be C or D")
-        return None
+    Q_remaining = q_remaining(cell,test)
 
-    # Calculate I and t
-    I = abs(data["Current"].mean())
-    t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
-
-    # Calculate Q remaining
-    Q_remaining = I*t/3600
-
-    q_init = q_initial(cell)
+    q_init = q_remaining(cell,"00")
 
     SOH = Q_remaining / q_init
     print(Q_remaining, q_init)
@@ -274,7 +256,10 @@ def plot_r_soc(test):
 if __name__ == "__main__":
     # print(soc("C","01"))
     
+    pt.plot_soc("D","03")
+    plt.show()
 
+    """
     df = calculate_model_voltage("C","03")
 
     polynomial = soc_ocv_fitted("D","03")
@@ -305,7 +290,7 @@ if __name__ == "__main__":
     axs[1].set_title("Voltage vs Time")
 
     plt.show()
-
+    """
     '''
     pt.soc_ocv("C", "05")
     pt.soc_ocv("D", "01")
