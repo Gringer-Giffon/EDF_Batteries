@@ -178,32 +178,11 @@ def plot_soc_ocv(cell, test):
     Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
 
     Plots OCV as a function of SoC for certain measure points
-    Returns a dataframe containing initial data with SoC and OCV
+    Returns None
     '''
 
-    # Dataframe of initial data with SoC
-    df_pre = pd.DataFrame(data={"Total Time": dt.extract(cell, test)[
-                          "Total Time"], "SoC": dt.soc(str(cell), str(test))})
-
-    # Extracting data for measurable OCVs
-    col1 = dt.find_OCV(str(cell), str(test))["Total Time"]
-    col2 = dt.find_OCV(str(cell), str(test))["Current"]
-    col3 = dt.find_OCV(str(cell), str(test))["Voltage"]
-
-    # Selecting respective SoCs for measured OCV points
-    if cell == "C":
-        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
-                if i in df_pre["Total Time"].values else np.nan for i in col1]
-    elif cell == "D":
-        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
-                if i in df_pre["Total Time"].values else np.nan for i in col1]
-    else:
-        print("Invalid cell")
-        return None
-
-    # New dataframe with OCV and SoC
-    d = {"Total Time": col1, "Current": col2, "OCV": col3, "SoC": col4}
-    df = pd.DataFrame(data=d)
+    # Dataframe of initial data with SoC and OCV
+    df = dt.soc_ocv(cell,test)
 
     # Plotting
     plt.plot(df["SoC"], df["OCV"], "+")
@@ -211,7 +190,7 @@ def plot_soc_ocv(cell, test):
     plt.xlabel("SoC (% ratio)")
     plt.title("OCV vs SoC: cell "+cell+" test "+test)
     plt.show()
-    return df
+    return None
 
 
 if __name__ == '__main__':

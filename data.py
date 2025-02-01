@@ -153,12 +153,12 @@ def add_R0(cell,test):
     Returns dataframe with original data and SoC and R0
 
     '''
-
+    time_between_dupes = 300 #added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
     df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
     print(df)
-    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 2 else 0)
+    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
     #rz.R0_fill(dfc)
@@ -167,13 +167,47 @@ def add_R0(cell,test):
 
     # df["SoC"] = soc("C", test)
     df["R0"] = R0
+    R0_no_dupes = df.loc[~(
+        df["Total Time"].diff().abs() < time_between_dupes)] #added this
     print('original data \n\n', df, '\n\n')
     df["R0"].to_csv("resistance")
 
     # rz.R0_replace(df)
     # print(df, '\n')
-    return df
+    return R0_no_dupes #changed this
 
+def soc_ocv(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
+
+    Plots OCV as a function of SoC for certain measure points
+    Returns a dataframe containing initial data with SoC and OCV
+    '''
+
+    # Dataframe of initial data with SoC
+    df_pre = pd.DataFrame(data={"Total Time":extract(cell, test)[
+                          "Total Time"], "SoC":soc(str(cell), str(test))})
+
+    # Extracting data for measurable OCVs
+    col1 = find_OCV(str(cell), str(test))["Total Time"]
+    col2 = find_OCV(str(cell), str(test))["Current"]
+    col3 = find_OCV(str(cell), str(test))["Voltage"]
+
+    # Selecting respective SoCs for measured OCV points
+    if cell == "C":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
+    elif cell == "D":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
+    else:
+        print("Invalid cell")
+        return None
+
+    # New dataframe with OCV and SoC
+    d = {"Total Time": col1, "Current": col2, "OCV": col3, "SoC": col4}
+    df = pd.DataFrame(data=d)
+    return df
 
 def soc_ocv_fitted(cell, test):
     '''
@@ -181,8 +215,8 @@ def soc_ocv_fitted(cell, test):
 
     Returns coefficients of fitted polynomial between SoC and OCV
     '''
-    soc = pt.soc_ocv(cell, test)["OCV"]
-    ocv = pt.soc_ocv(cell, test)["SoC"]
+    soc = soc_ocv(cell, test)["OCV"]
+    ocv = soc_ocv(cell, test)["SoC"]
 
     # Fit a polynomial of degree 4
     coefficients = np.polyfit(ocv, soc, 5) #4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
@@ -226,7 +260,7 @@ def add_ocv(cell, test):
     return df
 
 
-def calculate_model_voltage(cell,test):
+def calculate_model_voltage_0(cell,test):
     '''
     Parameters: test(string), cell test
 
@@ -239,7 +273,7 @@ def calculate_model_voltage(cell,test):
     return df
 
 
-def plot_r_soc(test):
+def plot_r_soc(cell,test):
     '''
     Parameters: test(string) test number
 
@@ -247,24 +281,59 @@ def plot_r_soc(test):
     Returns nothing
     '''
 
-    df = calculate_model_voltage(test)
+    df = calculate_model_voltage_0(cell,test)
 
     plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
     plt.show()
 
 
+def calculate_r1(cell,test):
+    '''
+    Parameters: test (int) test number
+
+    Returns dataframe with original data and SoC and R0
+
+    '''
+    time_between_dupes = 300 #added this
+    df = extract(cell, test)
+    df["SoC"] = soc(cell, test)
+    df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
+    print(df)
+    R1 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i])==30 else 0)
+          for i in range(len(df["Current"]))]
+
+    #rz.R0_fill(dfc)
+    # print(df, '\n')
+    # R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
+
+    # df["SoC"] = soc("C", test)
+    df["R1"] = R1
+    R1_no_dupes = df.loc[~(
+        df["Total Time"].diff().abs() < time_between_dupes)] #added this
+    print('original data \n\n', df, '\n\n')
+    df["R1"].to_csv("resistance1")
+
+    # rz.R0_replace(df)
+    # print(df, '\n')
+    return R1_no_dupes #changed this
+
+
+
+
 if __name__ == "__main__":
     # print(soc("C","01"))
-    
+    """
+    plot_r_soc("C","01")
+    pt.plot_test("C","01")
     pt.plot_soc("D","03")
     plt.show()
-
     """
-    df = calculate_model_voltage("C","03")
+    
+    df = calculate_model_voltage_0("C","03")
 
     polynomial = soc_ocv_fitted("D","03")
     y = [polynomial(soc) for soc in df["SoC"]]
-    pt.soc_ocv("D","03")
+    pt.plot_soc_ocv("D","03")
     plt.plot(df["SoC"],y)
     plt.show()
 
@@ -290,7 +359,7 @@ if __name__ == "__main__":
     axs[1].set_title("Voltage vs Time")
 
     plt.show()
-    """
+    
     '''
     pt.soc_ocv("C", "05")
     pt.soc_ocv("D", "01")
