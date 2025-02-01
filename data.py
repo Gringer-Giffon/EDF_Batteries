@@ -271,12 +271,6 @@ def plot_r_soc(test):
     plt.show()
 
 
-def calc_r0(test):
-    r0 = [abs(add_ocv_c(test)["OCV"].iloc[i]-add_ocv_c(test)["Voltage"].iloc[i])
-          for i in range(len(add_ocv_c(test)))]
-    return r0
-
-
 if __name__ == "__main__":
     # print(soc("C","01"))
     
@@ -288,9 +282,6 @@ if __name__ == "__main__":
     pt.soc_ocv("D","03")
     plt.plot(df["SoC"],y)
     plt.show()
-
-
-
 
 
     fig, axs = plt.subplots(3, 1)

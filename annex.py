@@ -102,3 +102,8 @@ def extract_all_steps(first, second, cell, test):
     data = dt.extract(cell, test)
     step_data = data[data["Step"].isin(list(range(first, second+1)))]
     return step_data
+
+def calc_r0(test):
+    r0 = [abs(add_ocv(test)["OCV"].iloc[i]-add_ocv(test)["Voltage"].iloc[i])
+          for i in range(len(add_ocv(test)))]
+    return r0

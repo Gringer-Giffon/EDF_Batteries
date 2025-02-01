@@ -192,18 +192,24 @@ def plot_soh(cell):
     return None
 
 
-def soc_ocv(cell, test):
+def plot_soc_ocv(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
+
+    Plots OCV as a function of SoC for certain measure points
+    Returns a dataframe containing initial data with SoC and OCV
+    '''
+
+    # Dataframe of initial data with SoC
     df_pre = pd.DataFrame(data={"Total Time": dt.extract(cell, test)[
                           "Total Time"], "SoC": dt.soc(str(cell), str(test))})
-    print(df_pre)
-    # plt.plot(df_pre["Total Time"], df_pre["SoC"])
-    # plt.show()
 
+    # Extracting data for measurable OCVs
     col1 = dt.find_OCV(str(cell), str(test))["Total Time"]
     col2 = dt.find_OCV(str(cell), str(test))["Current"]
     col3 = dt.find_OCV(str(cell), str(test))["Voltage"]
-    print("here:")
-    print(col1)
+    
+    # Selecting respective SoCs for measured OCV points
     if cell == "C":
         col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
                 if i in df_pre["Total Time"].values else np.nan for i in col1]
@@ -214,29 +220,28 @@ def soc_ocv(cell, test):
         print("Invalid cell")
         return None
 
+    # New dataframe with OCV and SoC
     d = {"Total Time": col1, "Current": col2, "OCV": col3, "SoC": col4}
     df = pd.DataFrame(data=d)
 
-    print(df)
-    plt.plot(df["SoC"], df["OCV"], "+")
-    df.to_csv("ocv_data")
-    plt.xlabel("OCV (V)")
-    plt.ylabel("SoC (%)")
-    plt.title("SoC vs OCV: cell "+cell+" test "+test)
+    # Plotting
+    plt.plot(df["SoC"],df["OCV"], "+")
+    plt.ylabel("OCV (V)")
+    plt.xlabel("SoC (% ratio)")
+    plt.title("OCV vs SoC: cell "+cell+" test "+test)
     plt.show()
     return df
 
 
 if __name__ == '__main__':
-    plot_soh("D")
-    plot_soh("C")
+    plot_soc_ocv("C","01")
+    plot_soc_ocv("D","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")
     plt.plot(data["Total Time"], soc)
     plot_test("D", "02")
     '''
-    soc_ocv("C", "06")
     """
     for i in range(0, 1):
         if i < 10:
