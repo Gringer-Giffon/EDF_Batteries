@@ -5,6 +5,7 @@ import os
 from scipy.integrate import cumulative_trapezoid
 import plot as pt
 import R0_identification_tianhe as rz
+import Tianhe_csvPlot as ti
 
 
 folderPath = f'./cells_data'
@@ -346,6 +347,85 @@ def calc_tau(cell,test):
         R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
     return tau, R1
 
+def calc_r1(cell,test):
+    df = extract(cell,test)
+    df = df[df['Step']==7]
+    pulse_coords = []
+    pulse_start = 0
+    tau = []
+    R1 = []
+    for i in range(len(df)-1):
+        if i ==0:
+            continue
+        elif abs(df.index[i]-df.index[i-1])>1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i+1])>1:
+            pulse_coords.append((pulse_start,i))
+    print(df)
+
+    for element in pulse_coords:
+        tau.append(df["Total Time"].iloc[element[1]]-df["Total Time"].iloc[element[0]])
+        R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
+    return pulse_coords, tau, R1
+
+def calc_r1_2(cell, test):
+    df1 = extract(cell, test)
+    df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
+    pulse_coords = []
+    pulse_start = 0
+    tau_values = []
+    r1_values = []
+
+    # Initialize columns for tau and R1
+    df1["tau"] = None
+    df1["R1"] = None
+
+    for i in range(1, len(df) - 1):  # Skip the first row
+        if abs(df.index[i] - df.index[i - 1]) > 1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i + 1]) > 1:
+            pulse_coords.append((pulse_start, i))
+
+    for element in pulse_coords:
+        start_index = element[0]
+        end_index = element[1]
+
+        # Calculate R1
+        voltage_start = df["Voltage"].iloc[start_index]
+        voltage_end = df["Voltage"].iloc[end_index]
+        R1_value = abs(voltage_start - voltage_end) / 30
+
+        # Calculate tau (time to reach 63% of the voltage change)
+        voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
+
+        # Find the closest index where the voltage meets or exceeds the target
+        time_to_adapt = None
+        for idx in range(start_index, end_index + 1):
+            if df["Voltage"].iloc[idx] <= voltage_target:
+                time_to_adapt = df["Total Time"].iloc[idx] - df["Total Time"].iloc[start_index]
+                break
+
+        tau_value = time_to_adapt if time_to_adapt is not None else 0
+
+        # Assign tau and R1 only at the start index
+        df1.loc[df1.index[start_index], "tau"] = tau_value
+        df1.loc[df1.index[start_index], "R1"] = R1_value
+
+        # Store values for debugging or further processing
+        tau_values.append(tau_value)
+        r1_values.append(R1_value)
+    df1.to_csv("r1 data")
+    return df1, pulse_coords, tau_values, r1_values
+
+
+def plot_soc_tau_r1(cell,test):
+    df = pd.DataFrame(data = {"tau": calc_r1_2(cell,test)[1], "R1": calc_r1_2(cell,test)[2]})
+    print(df)
+
+    df["tau"] = calc_r1_2(cell,test)[1]
+    df["R1"] = calc_r1_2(cell,test)[2]
+
+    print(df)
 
 if __name__ == "__main__":
     # print(soc("C","01"))
@@ -355,6 +435,9 @@ if __name__ == "__main__":
     pt.plot_soc("D","03")
     plt.show()
     """
+    plot_soc_tau_r1('C','01')
+    print(calc_r1_2("C","01"))
+
     df= calc_tau("D","01")
     print(df)
         

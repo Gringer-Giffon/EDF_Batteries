@@ -194,7 +194,7 @@ def plot_soc_ocv(cell, test):
 
 
 if __name__ == '__main__':
-    plot_test("D", "00")
+    plot_test("C", "00")
     plot_test("D", "01")
     plot_test("D", "02")
     plot_soh("D")
