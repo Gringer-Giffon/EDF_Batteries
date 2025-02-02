@@ -18,6 +18,17 @@ dfc = [pd.read_csv(os.path.join(folderPath, file))
        for file in csvFiles_C]      # Dataframes for Cell C
 dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
 
+def extract_all_steps(first, second, cell, test):
+    '''
+    Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
+
+    Returns dataframe for given step interval, does not remove duplicate step sequences
+    '''
+
+    data = extract(cell, test)
+    step_data = data[data["Step"].isin(list(range(first, second+1)))]
+    return step_data
+
 
 def extract(cell, test):
     '''
@@ -299,7 +310,7 @@ def calculate_r1(cell,test):
     df["SoC"] = soc(cell, test)
     df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
     print(df)
-    R1 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i])==30 else 0)
+    R1 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) == 30 else 0)
           for i in range(len(df["Current"]))]
 
     #rz.R0_fill(dfc)
@@ -311,13 +322,29 @@ def calculate_r1(cell,test):
     R1_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
     print('original data \n\n', df, '\n\n')
-    df["R1"].to_csv("resistance1")
+    df.to_csv("resistance2")
 
     # rz.R0_replace(df)
     # print(df, '\n')
     return R1_no_dupes #changed this
 
-
+def calc_tau(cell,test):
+    df = extract(cell,test)
+    j = 1
+    pulse_coords =[]
+    tau = []
+    R1 = []
+    pulse_start = 0
+    while j < len(df)-1:
+        if abs(df["Current"].iloc[j]) == 30 and not(abs(df["Current"].iloc[j-1]) in [29,30]):
+            pulse_start = j
+        elif abs(df["Voltage"].iloc[j] - df["Voltage"].iloc[j+1]) > 0.15:
+            pulse_coords.append((pulse_start,j))
+        j += 1
+    for element in pulse_coords:
+        tau.append(df["Total Time"].iloc[element[1]]-df["Total Time"].iloc[element[0]])
+        R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
+    return tau, R1
 
 
 if __name__ == "__main__":
@@ -328,7 +355,9 @@ if __name__ == "__main__":
     pt.plot_soc("D","03")
     plt.show()
     """
-    
+    df= calc_tau("D","01")
+    print(df)
+        
     df = calculate_model_voltage_0("C","03")
 
     polynomial = soc_ocv_fitted("D","03")
