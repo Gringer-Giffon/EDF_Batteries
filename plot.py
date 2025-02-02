@@ -5,8 +5,14 @@ import os
 from scipy.integrate import cumulative_trapezoid
 import data as dt
 
-directory = f"./cells_data"
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['text.color'] = 'darkred'  # Global text color
+plt.rcParams['axes.labelcolor'] = 'darkred'  # Axis label color
+#plt.rcParams['lines.color'] = 'darkred'
+plt.rcParams['axes.prop_cycle'] = plt.cycler('color', ['darkred'])
 
+directory = f"./cells_data"
+centrale_red = "#AF4458"
 # extracts all csv file names in directory
 csv_files = [f for f in os.listdir(directory)]
 
@@ -35,12 +41,20 @@ def plot_test(cell, test):
 
     fig.suptitle("Cell: "+cell.upper()+",test: "+test)  # main title
 
-    axs[0].plot(time, current, "g")
-    axs[0].set_title("Current")
-    axs[1].plot(time, voltage, "g")
-    axs[1].set_title("Voltage")
-    axs[2].plot(time, step, "g")
-    axs[2].set_title("Step")
+    axs[0].plot(time, current, centrale_red)
+    axs[0].set_title("Current vs Time")
+    axs[0].set_xlabel("Time (s)")
+    axs[0].set_ylabel("Current (A)")
+
+    axs[1].plot(time, voltage, centrale_red)
+    axs[1].set_title("Voltage vs Time")
+    axs[1].set_xlabel("Time (s)")
+    axs[1].set_ylabel("Voltage (V)")
+
+    axs[2].plot(time, step, centrale_red)
+    axs[2].set_title("Step vs Time")
+    axs[2].set_xlabel("Time (s)")
+    axs[2].set_ylabel("Step")
 
     plt.subplots_adjust(hspace=1)  # adjust space between plots
     plt.show()
@@ -182,7 +196,7 @@ def plot_soc_ocv(cell, test):
     '''
 
     # Dataframe of initial data with SoC and OCV
-    df = dt.soc_ocv(cell,test)
+    df = dt.soc_ocv(cell, test)
 
     # Plotting
     plt.plot(df["SoC"], df["OCV"], "+")

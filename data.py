@@ -395,7 +395,7 @@ def calc_r1_2(cell, test):
         voltage_end = df["Voltage"].iloc[end_index]
         R1_value = abs(voltage_start - voltage_end) / 30
 
-        # Calculate tau (time to reach 63% of the voltage change)
+        # Calculate tau (time to reach 63% of the voltage change) voltage
         voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
 
         # Find the closest index where the voltage meets or exceeds the target
