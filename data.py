@@ -394,7 +394,7 @@ def calc_r1_2(cell, test):
     if cell == "C":
         df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
     elif cell == "D":
-        df = df1[df1['Step'] ==8].copy()
+        df = df1[df1['Step'] ==6].copy()
     else:
         print("Invalid cell input")
         return None
@@ -449,6 +449,7 @@ def calc_r1_2(cell, test):
         tau_values.append(tau_value)
         r1_values.append(R1_value)
     df1.to_csv("r1 data")
+    print("df1",df1)
     return df1
 
 
@@ -461,14 +462,28 @@ def plot_soc_tau_r1(cell,test):
 
     print(df)
 
-def calculate_model_voltage_1(cell,test):
-    df = calculate_model_voltage_0(cell,test)
-    df1 = calc_r1_2(cell,test)
-    df["Model Voltage 1"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]*df1["Current"].iloc[i]
-                             +df1["R1"].iloc[i]*df1["Current"].iloc[i]*math.exp(-df1["Total Time"].iloc[i]/df1["tau"].iloc[i]) if df1["R1"].iloc[i]!=None 
-                             else df["OCV"].iloc[i]+df["R0"].iloc[i]*df1["Current"].iloc[i] for i in range(len(df))]
-    #voltage = OCV + R0 * I + R1 * I * exp(-t/tau)
+
+def calculate_model_voltage_1(cell, test):
+    df = calculate_model_voltage_0(cell, test)
+    df1 = calc_r1_2(cell, test)
+
+    df["Model Voltage 1"] = df["Model Voltage 0"].copy()
+
+    # Merge df1 into df to align by "Total Time" directly
+    df = df.merge(df1[["Total Time", "Current", "R1", "tau"]], on="Total Time", how="left")
+    print(df)
+    # Calculate model voltage using vectorized operations
+    df["Model Voltage 1"] = (
+        df["OCV"]
+        + df["R0"] * df1["Current"]
+        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"].replace(0, np.nan))
+    )
+
+    # Handle NaN results if tau was NaN or zero
+    df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
+
     return df
+
 
 if __name__ == "__main__":
     # print(soc("C","01"))
