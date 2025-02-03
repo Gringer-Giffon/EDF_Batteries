@@ -206,12 +206,21 @@ def plot_soc_ocv(cell, test):
     plt.show()
     return None
 
+def plot_model_voltage_0(cell,test):
+    df1 = dt.extract(cell,test)
+    df = dt.calculate_model_voltage_0(cell,test)
+    fig, axs = plt.subplots(2,1)
+    axs[0].plot(df1["Total Time"],df1["Voltage"])
+    axs[1].plot(df["Total Time"], df["Model Voltage"])
+    axs[0].set_title("Measured voltage over time")
+    axs[1].set_title("Model voltage over time")
+    plt.show()
+
 
 if __name__ == '__main__':
-    plot_test("C", "00")
-    plot_test("D", "01")
-    plot_test("D", "02")
     plot_soh("D")
+    plot_soc_ocv("C","01")
+    plot_model_voltage_0("C","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")
