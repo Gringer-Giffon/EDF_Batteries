@@ -216,7 +216,7 @@ def plot_model_voltage_0(cell,test):
     axs[1].set_title("Model voltage over time")
     plt.show()
 
-def plot_model_model_1(cell,test):
+def plot_model_voltage_1(cell,test):
     df = dt.calculate_model_voltage_1(cell,test)
     fig, axs = plt.subplots(3,1)
     axs[0].plot(df["Total Time"],df["Voltage"])
