@@ -238,7 +238,9 @@ def plot_simultaneous(cell,test):
 
 
 if __name__ == '__main__':
-    plot_simultaneous("C","01")
+    #plot_simultaneous("C","01")
+    plot_test("C","01") #7-9
+    plot_test("D","01") #bigger than 6 to 7
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")

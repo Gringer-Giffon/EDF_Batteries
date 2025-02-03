@@ -640,6 +640,61 @@ def add_r1(cell, test):
     df["R1"] = calculate_r1(df["SoC"], cell, test)
     return df
 
+def find_tau(cell,test):
+    if cell == "D":
+        time_between_dupes = 0  # allows reduction of measurement points on graph
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Step"] == 7]
+    elif cell == "C":
+        time_between_dupes = 0
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Step"] == 9]
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
+    data_no_dupes = data.loc[~(
+        data["Total Time"].diff().abs() < time_between_dupes)]
+    return data_no_dupes
+
+
+def measure_tau(cell, test):
+    df = find_tau(cell,test)
+
+    discontinuities = df.index.to_series().diff().gt(1)  # Find differences greater than 1
+
+    # Initialize the list to hold DataFrame splits
+    splits = []
+    start_idx = 0
+
+    # Split DataFrame at the discontinuities
+    for i, discontinuity in enumerate(discontinuities):
+        if discontinuity:  # Discontinuity found
+            splits.append(df.iloc[start_idx:i])  # Add the segment up to the discontinuity
+            start_idx = i
+
+    for split in splits:
+        target_voltage = 0.63*(split["Voltage"].iloc[-1]- split["Voltage"].iloc[0])
+        split["tau"] = split["Total Time"][split["Voltage"] == target_voltage]-split["Total Time"].iloc[0]
+
+    print(split)
+    
+    """
+    df = splits[0]
+    for i in range (1, len(splits)):
+        df = df.merge(splits[i])
+    """
+    """
+    x = []
+    y = []
+
+    for split in splits:
+        x.append(split["SoC"].iloc[0])
+        y.append(split["tau"].iloc[0])
+
+
+    plt.plot(x,y,"x")
+    """
+
+    return pd.concat(splits)
+
 
 if __name__ == "__main__":
     # print(soc("C","01"))
@@ -657,11 +712,10 @@ if __name__ == "__main__":
     """
     #print(find_R1("D","01"))
 
-    r1 = add_r1("C","01")
+    
     #ocv = add_ocv("D","01")
-    print(r1)
+    print(measure_tau("C","01"))
 
-    plt.plot(r1["Total Time"],r1["SoC"])
 
     """
     df = measure_r1("C","01")
