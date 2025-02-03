@@ -50,7 +50,7 @@ def extract(cell, test):
     return data
 
 
-def extract_step(first, second, cell, test):
+def extract_step_2(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
 
@@ -70,6 +70,19 @@ def extract_step(first, second, cell, test):
             break
     return step_data
 
+def extract_step(first, second, cell, test):
+    if type(test) == str:
+        test = int(test)
+    if cell == 'C':
+        df = dfc[test]
+    elif cell == 'D':
+        df = dfd[test]
+    else:
+        print('oops')
+        return [0,0]
+    t_s, x = ti.locate(df, first, 0)
+    x, t_e = ti.locate(df, second, 0)
+    return ti.extract(df, t_s, t_e)
 
 def q_remaining(cell,test):
     '''
@@ -90,6 +103,12 @@ def q_remaining(cell,test):
     # Calculate I and t
     I = abs(data["Current"].mean())
     t = data["Total Time"].iloc[-1]-data["Total Time"].iloc[0]
+
+    #plt.plot(data["Total Time"], data["Current"])
+    #plt.show()
+
+    
+    print('Cycle', test, ': ', I, t, '\n')
 
     # Calculate Q remaining and Q available
     Q_remaining = I*t/3600
@@ -129,7 +148,7 @@ def soh(cell, test):
     q_init = q_remaining(cell,"00")
 
     SOH = Q_remaining / q_init
-    print(Q_remaining, q_init)
+    #print(Q_remaining, q_init)
     return SOH
 
 
