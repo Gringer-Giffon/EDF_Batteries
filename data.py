@@ -200,12 +200,13 @@ def add_R0(cell,test):
     df["R0"] = R0
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
+    #df["R0"] = R0_no_dupes
     print('original data \n\n', df, '\n\n')
     df["R0"].to_csv("resistance")
 
     # rz.R0_replace(df)
     # print(df, '\n')
-    return R0_no_dupes #changed this
+    return df #changed this
 
 def soc_ocv(cell, test):
     '''
@@ -412,7 +413,7 @@ def calc_r1_2(cell, test):
         # Calculate R1
         voltage_start = df["Voltage"].iloc[start_index]
         voltage_end = df["Voltage"].iloc[end_index]
-        R1_value = abs(voltage_start - voltage_end) / 30
+        R1_value = abs(voltage_start - voltage_end) / 32
 
         # Calculate tau (time to reach 63% of the voltage change) voltage
         voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
@@ -454,13 +455,14 @@ if __name__ == "__main__":
     pt.plot_soc("D","03")
     plt.show()
     """
-    plot_soc_tau_r1('C','01')
-    print(calc_r1_2("C","01"))
+    #print(add_R0("C","01"))
+    #plot_soc_tau_r1('C','01')
+    #print(calc_r1_2("C","01"))
 
-    df= calc_tau("D","01")
-    print(df)
+    #df= calc_tau("D","01")
+    #print(df)
         
-    df = calculate_model_voltage_0("C","03")
+    df = calculate_model_voltage_0("D","03")
 
     polynomial = soc_ocv_fitted("D","03")
     y = [polynomial(soc) for soc in df["SoC"]]

@@ -18,3 +18,8 @@ if __name__ == "__main__":
     # look at C
     # make stuff available for cell C
     # find R0
+
+
+
+    #R0 calculated for every single point
+    
