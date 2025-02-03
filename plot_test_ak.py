@@ -9,7 +9,7 @@ import plot as pt
 
 #y_data = 2.5 * x_data + 1.0 + np.random.normal(0, 1, 50)
 
-pt.plot_soh("D")
+pt.plot_test("D", "09")
 
 
 
