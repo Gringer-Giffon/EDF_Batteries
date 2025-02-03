@@ -107,3 +107,196 @@ def calc_r0(test):
     r0 = [abs(add_ocv(test)["OCV"].iloc[i]-add_ocv(test)["Voltage"].iloc[i])
           for i in range(len(add_ocv(test)))]
     return r0
+
+
+def calculate_r1(cell,test):
+    '''
+    Parameters: test (int) test number
+
+    Returns dataframe with original data and SoC and R0
+
+    '''
+    time_between_dupes = 300 #added this
+    df = extract(cell, test)
+    df["SoC"] = soc(cell, test)
+    df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
+    
+    R1 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) == 30 else 0)
+          for i in range(len(df["Current"]))]
+
+    #rz.R0_fill(dfc)
+    # print(df, '\n')
+    # R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
+
+    # df["SoC"] = soc("C", test)
+    df["R1"] = R1
+    R1_no_dupes = df.loc[~(
+        df["Total Time"].diff().abs() < time_between_dupes)] #added this
+    
+    df.to_csv("resistance2")
+
+    # rz.R0_replace(df)
+    # print(df, '\n')
+    return R1_no_dupes #changed this
+
+
+def calc_tau(cell,test):
+    df = extract(cell,test)
+    j = 1
+    pulse_coords =[]
+    tau = []
+    R1 = []
+    pulse_start = 0
+    while j < len(df)-1:
+        if abs(df["Current"].iloc[j]) == 30 and not(abs(df["Current"].iloc[j-1]) in [29,30]):
+            pulse_start = j
+        elif abs(df["Voltage"].iloc[j] - df["Voltage"].iloc[j+1]) > 0.15:
+            pulse_coords.append((pulse_start,j))
+        j += 1
+    for element in pulse_coords:
+        tau.append(df["Total Time"].iloc[element[1]]-df["Total Time"].iloc[element[0]])
+        R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
+    return tau, R1
+
+
+def calc_r1(cell,test):
+    df = extract(cell,test)
+    df = df[df['Step']==7]
+    pulse_coords = []
+    pulse_start = 0
+    tau = []
+    R1 = []
+    for i in range(len(df)-1):
+        if i ==0:
+            continue
+        elif abs(df.index[i]-df.index[i-1])>1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i+1])>1:
+            pulse_coords.append((pulse_start,i))
+    print(df)
+
+    for element in pulse_coords:
+        tau.append(df["Total Time"].iloc[element[1]]-df["Total Time"].iloc[element[0]])
+        R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
+    return pulse_coords, tau, R1
+
+
+def plot_soc_tau_r1(cell,test):
+    df = pd.DataFrame(data = {"tau": measure_r1(cell,test)[1], "R1": measure_r1(cell,test)[2]})
+    df["tau"] = measure_r1(cell,test)[1]
+    df["R1"] = measure_r1(cell,test)[2]
+
+
+
+    """
+    for i in range(1, len(df) - 1):  # Skip the first row
+        if abs(df.index[i] - df.index[i - 1]) > 1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i + 1]) > 1:
+            pulse_coords.append((pulse_start, i))
+
+    for element in pulse_coords:
+        start_index = element[0]
+        end_index = element[1]
+
+        # Calculate R1
+        voltage_start = df["Voltage"].iloc[start_index]
+        voltage_end = df["Voltage"].iloc[end_index]
+        R1_value = abs(voltage_start - voltage_end) / 32
+
+        tau_value = df["Total Time"].iloc[end_index] - df["Total Time"].iloc[start_index]
+        '''
+        # Calculate tau (time to reach 63% of the voltage change) voltage
+        voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
+
+        # Find the closest index where the voltage meets or exceeds the target
+        time_to_adapt = None
+        for idx in range(start_index, end_index + 1):
+            if df["Voltage"].iloc[idx] <= voltage_target:
+                time_to_adapt = df["Total Time"].iloc[idx] - df["Total Time"].iloc[start_index]
+                break
+
+        tau_value = time_to_adapt if time_to_adapt is not None else 0
+        '''
+
+
+        # Assign tau and R1 only at the start index
+        #df1.loc[df1.index[start_index], "tau"] = tau_value
+        #df1.loc[df1.index[start_index], "R1"] = R1_value
+
+        df.loc[df.index.isin(range(start_index,end_index)),"tau"] = tau_value
+        df.loc[df.index.isin(range(start_index,end_index)),"R1"] = R1_value
+
+        # Store values for debugging or further processing
+        tau_values.append(tau_value)
+        r1_values.append(R1_value)
+
+        
+        
+
+    print("df!!!!!!",df)
+    return None
+
+    
+    df1 = calculate_model_voltage_0(cell,test)
+    if cell == "C":
+        df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
+    elif cell == "D":
+        df = df1[df1['Step'] ==6].copy()
+    else:
+        print("Invalid cell input")
+        return None
+    pulse_coords = []
+    pulse_start = 0
+    tau_values = []
+    r1_values = []
+
+    # Initialize columns for tau and R1
+    df["tau"] = None
+    df["R1"] = None
+
+    for i in range(1, len(df) - 1):  # Skip the first row
+        if abs(df.index[i] - df.index[i - 1]) > 1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i + 1]) > 1:
+            pulse_coords.append((pulse_start, i))
+
+    for element in pulse_coords:
+        start_index = element[0]
+        end_index = element[1]
+
+        # Calculate R1
+        voltage_start = df["Voltage"].iloc[start_index]
+        voltage_end = df["Voltage"].iloc[end_index]
+        R1_value = abs(voltage_start - voltage_end) / 32
+
+        tau_value = df["Total Time"].iloc[end_index] - df["Total Time"].iloc[start_index]
+        '''
+        # Calculate tau (time to reach 63% of the voltage change) voltage
+        voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
+
+        # Find the closest index where the voltage meets or exceeds the target
+        time_to_adapt = None
+        for idx in range(start_index, end_index + 1):
+            if df["Voltage"].iloc[idx] <= voltage_target:
+                time_to_adapt = df["Total Time"].iloc[idx] - df["Total Time"].iloc[start_index]
+                break
+
+        tau_value = time_to_adapt if time_to_adapt is not None else 0
+        '''
+
+
+        # Assign tau and R1 only at the start index
+        #df1.loc[df1.index[start_index], "tau"] = tau_value
+        #df1.loc[df1.index[start_index], "R1"] = R1_value
+
+        df.loc[df.index.isin(range(start_index,end_index)),"tau"] = tau_value
+        df.loc[df.index.isin(range(start_index,end_index)),"R1"] = R1_value
+
+        # Store values for debugging or further processing
+        tau_values.append(tau_value)
+        r1_values.append(R1_value)
+    df1.to_csv("r1 data")
+    print("df1",df)
+    return df
+    """

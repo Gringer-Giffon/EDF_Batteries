@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import Tianhe_csvPlot as csvp
+#import Tianhe_csvPlot as csvp
 import data as dt
 
 myList = []

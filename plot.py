@@ -207,6 +207,11 @@ def plot_soc_ocv(cell, test):
     return None
 
 def plot_model_voltage_0(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots Oth order model voltage
+    '''
     df1 = dt.extract(cell,test)
     df = dt.calculate_model_voltage_0(cell,test)
     fig, axs = plt.subplots(2,1)
@@ -217,6 +222,11 @@ def plot_model_voltage_0(cell,test):
     plt.show()
 
 def plot_model_voltage_1(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots 1st order model voltage
+    '''
     df = dt.calculate_model_voltage_1(cell,test)
     fig, axs = plt.subplots(3,1)
     axs[0].plot(df["Total Time"],df["Voltage"])
@@ -229,6 +239,11 @@ def plot_model_voltage_1(cell,test):
     plt.show()
 
 def plot_simultaneous(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Simultaneously plot measured, order 0 and order 1 voltage on subplots
+    '''
     df = dt.calculate_model_voltage_1(cell,test)
     plt.plot(df["Total Time"],df["Voltage"],"b")
     plt.plot(df["Total Time"], df["Model Voltage 0"],"g")
@@ -236,6 +251,17 @@ def plot_simultaneous(cell,test):
     
     plt.show()
 
+def plot_r_soc(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots R as a function of SoC
+    Returns nothing
+    '''
+
+    df = dt.calculate_model_voltage_0(cell,test)
+    plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
+    plt.show()
 
 if __name__ == '__main__':
     #plot_simultaneous("C","01")
