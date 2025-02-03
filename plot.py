@@ -211,16 +211,34 @@ def plot_model_voltage_0(cell,test):
     df = dt.calculate_model_voltage_0(cell,test)
     fig, axs = plt.subplots(2,1)
     axs[0].plot(df1["Total Time"],df1["Voltage"])
-    axs[1].plot(df["Total Time"], df["Model Voltage"])
+    axs[1].plot(df["Total Time"], df["Model Voltage 0"])
     axs[0].set_title("Measured voltage over time")
     axs[1].set_title("Model voltage over time")
     plt.show()
 
+def plot_model_model_1(cell,test):
+    df = dt.calculate_model_voltage_1(cell,test)
+    fig, axs = plt.subplots(3,1)
+    axs[0].plot(df["Total Time"],df["Voltage"])
+    axs[1].plot(df["Total Time"], df["Model Voltage 0"])
+    axs[0].set_title("Measured voltage over time")
+    axs[1].set_title("Model voltage 0 over time")
+    axs[2].plot(df["Total Time"],df["Model Voltage 1"])
+    axs[2].set_title("Model voltage 1 over time")
+    plt.subplots_adjust(hspace=1)
+    plt.show()
+
+def plot_simultaneous(cell,test):
+    df = dt.calculate_model_voltage_1(cell,test)
+    plt.plot(df["Total Time"],df["Voltage"],"b")
+    plt.plot(df["Total Time"], df["Model Voltage 0"],"g")
+    plt.plot(df["Total Time"],df["Model Voltage 1"],"r")
+    
+    plt.show()
+
 
 if __name__ == '__main__':
-    plot_soh("D")
-    plot_soc_ocv("C","01")
-    plot_model_voltage_0("C","01")
+    plot_simultaneous("C","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")

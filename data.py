@@ -6,6 +6,7 @@ from scipy.integrate import cumulative_trapezoid
 import plot as pt
 import R0_identification_tianhe as rz
 import Tianhe_csvPlot as ti
+import math
 
 
 folderPath = f'./cells_data'
@@ -300,7 +301,7 @@ def calculate_model_voltage_0(cell,test):
     '''
 
     df = add_ocv(cell,test)
-    df["Model Voltage"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
+    df["Model Voltage 0"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
                            * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
@@ -390,7 +391,13 @@ def calc_r1(cell,test):
 
 def calc_r1_2(cell, test):
     df1 = extract(cell, test)
-    df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
+    if cell == "C":
+        df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
+    elif cell == "D":
+        df = df1[df1['Step'] ==6].copy()
+    else:
+        print("Invalid cell input")
+        return None
     pulse_coords = []
     pulse_start = 0
     tau_values = []
@@ -432,14 +439,18 @@ def calc_r1_2(cell, test):
 
 
         # Assign tau and R1 only at the start index
-        df1.loc[df1.index[start_index], "tau"] = tau_value
-        df1.loc[df1.index[start_index], "R1"] = R1_value
+        #df1.loc[df1.index[start_index], "tau"] = tau_value
+        #df1.loc[df1.index[start_index], "R1"] = R1_value
+
+        df1.loc[df1.index.isin(range(start_index,end_index)),"tau"] = tau_value
+        df1.loc[df1.index.isin(range(start_index,end_index)),"R1"] = R1_value
 
         # Store values for debugging or further processing
         tau_values.append(tau_value)
         r1_values.append(R1_value)
     df1.to_csv("r1 data")
-    return df1, pulse_coords, tau_values, r1_values
+    print("df1",df1)
+    return df1
 
 
 def plot_soc_tau_r1(cell,test):
@@ -451,8 +462,28 @@ def plot_soc_tau_r1(cell,test):
 
     print(df)
 
-def calculate_model_voltage_1(cell,test):
-    return None
+
+def calculate_model_voltage_1(cell, test):
+    df = calculate_model_voltage_0(cell, test)
+    df1 = calc_r1_2(cell, test)
+
+    df["Model Voltage 1"] = df["Model Voltage 0"].copy()
+
+    # Merge df1 into df to align by "Total Time" directly
+    df = df.merge(df1[["Total Time", "Current", "R1", "tau"]], on="Total Time", how="left")
+    print(df)
+    # Calculate model voltage using vectorized operations
+    df["Model Voltage 1"] = (
+        df["OCV"]
+        + df["R0"] * df1["Current"]
+        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"].replace(0, np.nan))
+    )
+
+    # Handle NaN results if tau was NaN or zero
+    df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
+
+    return df
+
 
 if __name__ == "__main__":
     # print(soc("C","01"))
@@ -463,9 +494,21 @@ if __name__ == "__main__":
     plt.show()
     """
     #print(add_R0("C","01"))
+    """
+    df = calculate_model_voltage_1("C","01")
+    plt.plot(df["Total Time"],df["Model Voltage 1"])
+    plt.show()
+    """
+
+    
+    df1 = calc_r1_2("C","01")
+    
+    plt.plot(df1["Total Time"],df1["R1"])
+    plt.show()
+    print(calculate_model_voltage_1("D","01"))
     plot_soc_tau_r1('C','01')
     print(calc_r1_2("C","01"))
-
+    """
     df= calc_tau("D","01")
     print(df)
         
@@ -499,7 +542,7 @@ if __name__ == "__main__":
     axs[1].set_title("Voltage vs Time")
 
     plt.show()
-    
+    """
     '''
     pt.soc_ocv("C", "05")
     pt.soc_ocv("D", "01")
