@@ -109,7 +109,7 @@ def q_remaining(cell,test):
     #plt.show()
 
     
-    print('Cycle', test, ': ', I, t, '\n')
+    
 
     # Calculate Q remaining and Q available
     Q_remaining = I*t/3600
@@ -189,7 +189,7 @@ def add_R0(cell,test):
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
     df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
-    print(df)
+    
     R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
@@ -202,7 +202,7 @@ def add_R0(cell,test):
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
     #df["R0"] = R0_no_dupes
-    print('original data \n\n', df, '\n\n')
+    
     df["R0"].to_csv("resistance")
 
     # rz.R0_replace(df)
@@ -248,11 +248,11 @@ def soc_ocv_fitted(cell, test):
 
     Returns coefficients of fitted polynomial between SoC and OCV
     '''
-    soc = soc_ocv(cell, test)["OCV"]
-    ocv = soc_ocv(cell, test)["SoC"]
+    soc = soc_ocv(cell, test)["SoC"]
+    ocv = soc_ocv(cell, test)["OCV"]
 
     # Fit a polynomial of degree 4
-    coefficients = np.polyfit(ocv, soc, 5) #4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
+    coefficients = np.polyfit(soc, ocv, 5) #4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
     polynomial = np.poly1d(coefficients)
 
     # Generate fitted values for plotting
@@ -331,7 +331,7 @@ def calculate_r1(cell,test):
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
     df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
-    print(df)
+    
     R1 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) == 30 else 0)
           for i in range(len(df["Current"]))]
 
@@ -343,7 +343,7 @@ def calculate_r1(cell,test):
     df["R1"] = R1
     R1_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
-    print('original data \n\n', df, '\n\n')
+    
     df.to_csv("resistance2")
 
     # rz.R0_replace(df)
@@ -389,8 +389,94 @@ def calc_r1(cell,test):
         R1.append(abs(df["Voltage"].iloc[element[0]]-df["Voltage"].iloc[element[1]])/30)
     return pulse_coords, tau, R1
 
-def calc_r1_2(cell, test):
-    df1 = extract(cell, test)
+
+def measure_r1(cell, test):
+    df = find_R1(cell,test)
+
+    discontinuities = df.index.to_series().diff().gt(1)  # Find differences greater than 1
+
+    # Initialize the list to hold DataFrame splits
+    splits = []
+    start_idx = 0
+
+    # Split DataFrame at the discontinuities
+    for i, discontinuity in enumerate(discontinuities):
+        if discontinuity:  # Discontinuity found
+            splits.append(df.iloc[start_idx:i])  # Add the segment up to the discontinuity
+            start_idx = i
+
+    for split in splits:
+        split["R1"] = abs(split["Voltage"].iloc[0] - split["Voltage"].iloc[-1])/ abs(split["Current"].mean())
+    
+    """
+    df = splits[0]
+    for i in range (1, len(splits)):
+        df = df.merge(splits[i])
+    """
+    x = []
+    y = []
+
+    for split in splits:
+        x.append(split["SoC"].iloc[0])
+        y.append(split["R1"].iloc[1])
+
+
+    plt.plot(x,y,"x")
+    
+
+    return pd.concat(splits)
+        
+    """
+    for i in range(1, len(df) - 1):  # Skip the first row
+        if abs(df.index[i] - df.index[i - 1]) > 1:
+            pulse_start = i
+        elif abs(df.index[i] - df.index[i + 1]) > 1:
+            pulse_coords.append((pulse_start, i))
+
+    for element in pulse_coords:
+        start_index = element[0]
+        end_index = element[1]
+
+        # Calculate R1
+        voltage_start = df["Voltage"].iloc[start_index]
+        voltage_end = df["Voltage"].iloc[end_index]
+        R1_value = abs(voltage_start - voltage_end) / 32
+
+        tau_value = df["Total Time"].iloc[end_index] - df["Total Time"].iloc[start_index]
+        '''
+        # Calculate tau (time to reach 63% of the voltage change) voltage
+        voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
+
+        # Find the closest index where the voltage meets or exceeds the target
+        time_to_adapt = None
+        for idx in range(start_index, end_index + 1):
+            if df["Voltage"].iloc[idx] <= voltage_target:
+                time_to_adapt = df["Total Time"].iloc[idx] - df["Total Time"].iloc[start_index]
+                break
+
+        tau_value = time_to_adapt if time_to_adapt is not None else 0
+        '''
+
+
+        # Assign tau and R1 only at the start index
+        #df1.loc[df1.index[start_index], "tau"] = tau_value
+        #df1.loc[df1.index[start_index], "R1"] = R1_value
+
+        df.loc[df.index.isin(range(start_index,end_index)),"tau"] = tau_value
+        df.loc[df.index.isin(range(start_index,end_index)),"R1"] = R1_value
+
+        # Store values for debugging or further processing
+        tau_values.append(tau_value)
+        r1_values.append(R1_value)
+
+        
+        
+
+    print("df!!!!!!",df)
+    return None
+
+    
+    df1 = calculate_model_voltage_0(cell,test)
     if cell == "C":
         df = df1[df1['Step'] == 7].copy()  # Ensure copy to modify safely
     elif cell == "D":
@@ -404,8 +490,8 @@ def calc_r1_2(cell, test):
     r1_values = []
 
     # Initialize columns for tau and R1
-    df1["tau"] = None
-    df1["R1"] = None
+    df["tau"] = None
+    df["R1"] = None
 
     for i in range(1, len(df) - 1):  # Skip the first row
         if abs(df.index[i] - df.index[i - 1]) > 1:
@@ -423,7 +509,7 @@ def calc_r1_2(cell, test):
         R1_value = abs(voltage_start - voltage_end) / 32
 
         tau_value = df["Total Time"].iloc[end_index] - df["Total Time"].iloc[start_index]
-        """
+        '''
         # Calculate tau (time to reach 63% of the voltage change) voltage
         voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
 
@@ -435,53 +521,123 @@ def calc_r1_2(cell, test):
                 break
 
         tau_value = time_to_adapt if time_to_adapt is not None else 0
-        """
+        '''
 
 
         # Assign tau and R1 only at the start index
         #df1.loc[df1.index[start_index], "tau"] = tau_value
         #df1.loc[df1.index[start_index], "R1"] = R1_value
 
-        df1.loc[df1.index.isin(range(start_index,end_index)),"tau"] = tau_value
-        df1.loc[df1.index.isin(range(start_index,end_index)),"R1"] = R1_value
+        df.loc[df.index.isin(range(start_index,end_index)),"tau"] = tau_value
+        df.loc[df.index.isin(range(start_index,end_index)),"R1"] = R1_value
 
         # Store values for debugging or further processing
         tau_values.append(tau_value)
         r1_values.append(R1_value)
     df1.to_csv("r1 data")
-    print("df1",df1)
-    return df1
+    print("df1",df)
+    return df
+    """
+    
+def soc_R1_fitted(cell, test):
+    '''
+    Parameters: cell (string), test (string)
+
+    Returns coefficients of fitted polynomial between SoC and OCV
+    '''
+    df = measure_r1(cell,test)
+    soc = df["SoC"]
+    R1 = df["R1"]
+
+    # Fit a polynomial of degree 4
+    coefficients = np.polyfit(soc, R1, 6) #5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
+    polynomial = np.poly1d(coefficients)
+
+    # Generate fitted values for plotting
+    # ocv_range = np.linspace(min(ocv), max(ocv), 100)
+    # fitted_soc = polynomial(ocv)
+
+    return polynomial
+
+def calculate_r1(soc, cell, test):
+    '''
+    Parameters: soc (list) soc values, cell (string), test (string)
+
+    Returns list of calculated OCV values using the polynomial relation between OCV and SoC
+    '''
+
+    #coefficients = soc_R1_fitted(cell, test)
+    # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
+
+    """
+    print(pt.soc_ocv(cell, test)["SoC"])
+    plt.plot()
+    """
+    poly = soc_R1_fitted(cell, test)
+    return [poly(soc) for soc in soc]
+
+def find_R1(cell, test):
+    '''
+    Parameters: cell (str) C or D, 
+                test (str) in the form of 01, 02, etc...
+
+    Returns a list of different times that the circuit has reached OCV
+    '''
+
+    '''
+    data = extract(cell,test)[extract(cell,test)["Step"]==5]
+    data_no_dupes = data.loc[~(data["Total Time"].diff().abs() < 3600)]
+    '''
+    if cell == "D":
+        time_between_dupes = 0  # allows reduction of measurement points on graph
+        step = 6
+    elif cell == "C":
+        time_between_dupes = 0
+        step = 7
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
+    data = add_ocv(cell,test)[add_ocv(cell,test)["Step"] == step]
+    data_no_dupes = data.loc[~(
+        data["Total Time"].diff().abs() < time_between_dupes)]
+    return data_no_dupes
 
 
 def plot_soc_tau_r1(cell,test):
-    df = pd.DataFrame(data = {"tau": calc_r1_2(cell,test)[1], "R1": calc_r1_2(cell,test)[2]})
-    print(df)
-
-    df["tau"] = calc_r1_2(cell,test)[1]
-    df["R1"] = calc_r1_2(cell,test)[2]
-
-    print(df)
+    df = pd.DataFrame(data = {"tau": measure_r1(cell,test)[1], "R1": measure_r1(cell,test)[2]})
+    df["tau"] = measure_r1(cell,test)[1]
+    df["R1"] = measure_r1(cell,test)[2]
 
 
 def calculate_model_voltage_1(cell, test):
     df = calculate_model_voltage_0(cell, test)
-    df1 = calc_r1_2(cell, test)
+    df1 = measure_r1(cell, test)
 
     df["Model Voltage 1"] = df["Model Voltage 0"].copy()
 
     # Merge df1 into df to align by "Total Time" directly
-    df = df.merge(df1[["Total Time", "Current", "R1", "tau"]], on="Total Time", how="left")
-    print(df)
+    df = df.merge(df1[["Total Time","R1", "tau"]], on="Total Time", how="left")
+    
     # Calculate model voltage using vectorized operations
     df["Model Voltage 1"] = (
         df["OCV"]
         + df["R0"] * df1["Current"]
-        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"].replace(0, np.nan))
-    )
+        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"].replace(0.0, np.nan)))
 
     # Handle NaN results if tau was NaN or zero
     df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
 
+    return df
+
+def add_r1(cell, test):
+    '''
+    Parameters: test(string), cell test
+
+    Returns dataframe containing OCV for cell c
+    '''
+
+    df = add_ocv(cell,test)
+    df["R1"] = calculate_r1(df["SoC"], cell, test)
     return df
 
 
@@ -499,15 +655,28 @@ if __name__ == "__main__":
     plt.plot(df["Total Time"],df["Model Voltage 1"])
     plt.show()
     """
+    #print(find_R1("D","01"))
 
-    
-    df1 = calc_r1_2("C","01")
-    
-    plt.plot(df1["Total Time"],df1["R1"])
+    r1 = add_r1("C","01")
+    #ocv = add_ocv("D","01")
+    print(r1)
+
+    plt.plot(r1["Total Time"],r1["SoC"])
+
+    """
+    df = measure_r1("C","01")
     plt.show()
-    print(calculate_model_voltage_1("D","01"))
-    plot_soc_tau_r1('C','01')
-    print(calc_r1_2("C","01"))
+    x = np.linspace(0,1)
+    y = calculate_r1(x,"C","01")
+
+    plt.plot()
+    plt.plot(x,y)
+    """
+
+    #df = calc_r1_2("C","01")
+    #plt.plot(df["SoC"][df["R1"] != 0],df["R1"][df["R1"]!=0])
+    plt.show()
+
     """
     df= calc_tau("D","01")
     print(df)
