@@ -218,6 +218,7 @@ def plot_model_voltage_0(cell,test):
 
 
 if __name__ == '__main__':
+    plot_soh("D")
     plot_soc_ocv("C","01")
     plot_model_voltage_0("C","01")
     '''

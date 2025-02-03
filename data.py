@@ -415,6 +415,8 @@ def calc_r1_2(cell, test):
         voltage_end = df["Voltage"].iloc[end_index]
         R1_value = abs(voltage_start - voltage_end) / 32
 
+        tau_value = df["Total Time"].iloc[end_index] - df["Total Time"].iloc[start_index]
+        """
         # Calculate tau (time to reach 63% of the voltage change) voltage
         voltage_target = voltage_start - 0.63 * abs(voltage_end - voltage_start)
 
@@ -426,6 +428,8 @@ def calc_r1_2(cell, test):
                 break
 
         tau_value = time_to_adapt if time_to_adapt is not None else 0
+        """
+
 
         # Assign tau and R1 only at the start index
         df1.loc[df1.index[start_index], "tau"] = tau_value
@@ -447,6 +451,9 @@ def plot_soc_tau_r1(cell,test):
 
     print(df)
 
+def calculate_model_voltage_1(cell,test):
+    return None
+
 if __name__ == "__main__":
     # print(soc("C","01"))
     """
@@ -456,11 +463,11 @@ if __name__ == "__main__":
     plt.show()
     """
     #print(add_R0("C","01"))
-    #plot_soc_tau_r1('C','01')
-    #print(calc_r1_2("C","01"))
+    plot_soc_tau_r1('C','01')
+    print(calc_r1_2("C","01"))
 
-    #df= calc_tau("D","01")
-    #print(df)
+    df= calc_tau("D","01")
+    print(df)
         
     df = calculate_model_voltage_0("D","03")
 
