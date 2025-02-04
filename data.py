@@ -474,10 +474,10 @@ def find_tau(cell,test):
     '''
     if cell == "D":
         time_between_dupes = 0  # allows reduction of measurement points on graph
-        data = add_ocv(cell,test)[add_ocv(cell,test)["Step"] == 7]
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Current"].isin(range(29,32))]
     elif cell == "C":
         time_between_dupes = 0
-        data = add_ocv(cell,test)[add_ocv(cell,test)["Step"] == 9]
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Current"].isin(range(31,34))]
     else:
         print("Invalid cell entry. Cell entry must be C or D")
         return None
@@ -506,11 +506,26 @@ def measure_tau(cell, test):
             splits.append(df.iloc[start_idx:i])  # Add the segment up to the discontinuity
             start_idx = i
 
-    for split in splits:
-        target_voltage = 0.63*(split["Voltage"].iloc[-1]- split["Voltage"].iloc[0])
-        split["tau"] = split["Total Time"][split["Voltage"] == target_voltage]-split["Total Time"].iloc[0]
+    tau_values = []
 
-    print(split)
+    for split in splits:
+        # Ignore empty splits
+        if split.empty:
+            continue
+
+        target_voltage = 0.95 * split["Voltage"].iloc[-1]
+
+        # Find the closest time when voltage reaches the target value
+        closest_index = (split["Voltage"] - target_voltage).abs().idxmin()
+        
+        if closest_index != split.index[0]:  # Ensure a valid time difference
+            tau_value = (split["Total Time"].loc[closest_index] - split["Total Time"].iloc[0])/5
+        else:
+            tau_value = np.nan
+
+        # Append tau to the DataFrame and store in list
+        split["tau"] = tau_value
+        tau_values.append(split)
     
     """
     df = splits[0]
