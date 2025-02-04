@@ -8,7 +8,7 @@ import data as dt
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['text.color'] = 'darkred'  # Global text color
 plt.rcParams['axes.labelcolor'] = 'darkred'  # Axis label color
-#plt.rcParams['lines.color'] = 'darkred'
+# plt.rcParams['lines.color'] = 'darkred'
 plt.rcParams['axes.prop_cycle'] = plt.cycler('color', ['darkred'])
 
 directory = f"./cells_data"
@@ -41,17 +41,17 @@ def plot_test(cell, test):
 
     fig.suptitle("Cell: "+cell.upper()+",test: "+test)  # main title
 
-    axs[0].plot(time, current, centrale_red)
+    axs[0].plot(time, current, "o", color=centrale_red)
     axs[0].set_title("Current vs Time")
     axs[0].set_xlabel("Time (s)")
     axs[0].set_ylabel("Current (A)")
 
-    axs[1].plot(time, voltage, centrale_red)
+    axs[1].plot(time, voltage, "o", color=centrale_red)
     axs[1].set_title("Voltage vs Time")
     axs[1].set_xlabel("Time (s)")
     axs[1].set_ylabel("Voltage (V)")
 
-    axs[2].plot(time, step, centrale_red)
+    axs[2].plot(time, step, "o", color= centrale_red)
     axs[2].set_title("Step vs Time")
     axs[2].set_xlabel("Time (s)")
     axs[2].set_ylabel("Step")
@@ -206,52 +206,56 @@ def plot_soc_ocv(cell, test):
     plt.show()
     return None
 
-def plot_model_voltage_0(cell,test):
+
+def plot_model_voltage_0(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test(string) test number
 
     Plots Oth order model voltage
     '''
-    df1 = dt.extract(cell,test)
-    df = dt.calculate_model_voltage_0(cell,test)
-    fig, axs = plt.subplots(2,1)
-    axs[0].plot(df1["Total Time"],df1["Voltage"])
+    df1 = dt.extract(cell, test)
+    df = dt.calculate_model_voltage_0(cell, test)
+    fig, axs = plt.subplots(2, 1)
+    axs[0].plot(df1["Total Time"], df1["Voltage"])
     axs[1].plot(df["Total Time"], df["Model Voltage 0"])
     axs[0].set_title("Measured voltage over time")
     axs[1].set_title("Model voltage over time")
     plt.show()
 
-def plot_model_voltage_1(cell,test):
+
+def plot_model_voltage_1(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test(string) test number
 
     Plots 1st order model voltage
     '''
-    df = dt.calculate_model_voltage_1(cell,test)
-    fig, axs = plt.subplots(3,1)
-    axs[0].plot(df["Total Time"],df["Voltage"])
+    df = dt.calculate_model_voltage_1(cell, test)
+    fig, axs = plt.subplots(3, 1)
+    axs[0].plot(df["Total Time"], df["Voltage"])
     axs[1].plot(df["Total Time"], df["Model Voltage 0"])
     axs[0].set_title("Measured voltage over time")
     axs[1].set_title("Model voltage 0 over time")
-    axs[2].plot(df["Total Time"],df["Model Voltage 1"])
+    axs[2].plot(df["Total Time"], df["Model Voltage 1"])
     axs[2].set_title("Model voltage 1 over time")
     plt.subplots_adjust(hspace=1)
     plt.show()
 
-def plot_simultaneous(cell,test):
+
+def plot_simultaneous(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test(string) test number
 
     Simultaneously plot measured, order 0 and order 1 voltage on subplots
     '''
-    df = dt.calculate_model_voltage_1(cell,test)
-    plt.plot(df["Total Time"],df["Voltage"],"b")
-    plt.plot(df["Total Time"], df["Model Voltage 0"],"g")
-    plt.plot(df["Total Time"],df["Model Voltage 1"],"r")
-    
+    df = dt.calculate_model_voltage_1(cell, test)
+    plt.plot(df["Total Time"], df["Voltage"], "b")
+    plt.plot(df["Total Time"], df["Model Voltage 0"], "g")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
+
     plt.show()
 
-def plot_r_soc(cell,test):
+
+def plot_r0_soc(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test(string) test number
 
@@ -259,17 +263,64 @@ def plot_r_soc(cell,test):
     Returns nothing
     '''
 
-    df = dt.calculate_model_voltage_0(cell,test)
-    plt.plot(df["SoC"], df["R0"],'o')  # should be upside down U
+    df = dt.calculate_model_voltage_0(cell, test)
+    plt.plot(df["SoC"], df["R0"], 'o')  # should be upside down U
+    plt.title("R0 vs SoC")
     plt.show()
 
+def plot_r1_soc(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots R as a function of SoC
+    Returns nothing
+    '''
+
+    df = dt.calculate_model_voltage_1(cell, test)
+    plt.plot(df["SoC"], df["R1"])  # should be upside down U
+    plt.title("R1 vs SoC")
+    plt.show()
+
+def plot_tau_soc(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots R as a function of SoC
+    Returns nothing
+    '''
+
+    df = dt.calculate_model_voltage_1(cell, test)
+    plt.plot(df["SoC"], df["tau"])  # should be upside down U
+    plt.title("tau vs SoC")
+    plt.show()
+
+def plot_c1_soc(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test(string) test number
+
+    Plots R as a function of SoC
+    Returns nothing
+    '''
+
+    df = dt.calculate_model_voltage_1(cell, test)
+    plt.plot(df["SoC"], df["C1"],"o")  # should be upside down U
+    plt.title("C1 vs SoC")
+    plt.show()
+
+
 if __name__ == '__main__':
-    #plot_simultaneous("C","01")
-    plot_test("C","01") #7-9
-    plot_test("D","01") #bigger than 6 to 7
-    
-    plot_simultaneous("D","01")
-    plot_simultaneous("C","01")
+    # plot_simultaneous("C","01")
+    plot_test("C", "01")  # 7-9
+    plot_test("D", "01")  # bigger than 6 to 7
+
+    #plot_r0_soc("C","01")
+    #plot_r1_soc("D","01")
+    plot_c1_soc("C","01")
+    #plot_tau_soc("C","01")
+
+
+    plot_simultaneous("D", "01")
+    plot_simultaneous("C", "01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")
