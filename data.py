@@ -467,6 +467,58 @@ def add_r1(cell, test):
 #-------------------------------------------------------TAU----------------------------------------------------------------
 
 def find_tau(cell,test):
+    if cell == "D":
+        df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(6,7+1))]
+    elif cell == "C":
+        df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(7,9+1))]
+    else:
+        print("Invalid cell")
+        return None
+    
+    print("extracted tau data", df)
+
+    return df
+
+def measure_tau(cell,test):
+    df = find_tau(cell,test)
+
+    discontinuities = df.index.to_series().diff().gt(1)
+
+    # Initialize the list to hold DataFrame splits
+    splits = []
+    start_idx = 0
+
+    # Split DataFrame at the discontinuities
+    for i, discontinuity in enumerate(discontinuities):
+        if discontinuity:  # Discontinuity found
+            splits.append(df.iloc[start_idx:i])  # Add the segment up to the discontinuity
+            start_idx = i
+    
+    for split in splits:
+        #split["tau"] = None
+        time_min = split["Total Time"][split["Voltage"] == min(split["Voltage"])].iloc[0]
+        target_voltage = 0.95*max(split["Voltage"])
+        time_95 = split["Total Time"][abs(split["Voltage"] - target_voltage) < 0.2].iloc[0]
+        tau = [abs(time_95-time_min)/3]*len(split["Total Time"])
+        print("min",time_min)
+        print("95",time_95)
+        print("tau",tau)
+        split["tau"] = tau
+
+        print(split)
+
+    return pd.concat(splits)
+
+def add_c1(cell,test):
+    df = measure_tau(cell,test)
+    df["C1"] =df["tau"]/df["R1"]
+    print(df)
+    return df
+
+
+
+"""
+def find_tau(cell,test):
     '''
     Parameters: cell (string) "C" or "D", test (string) test number
 
@@ -527,12 +579,12 @@ def measure_tau(cell, test):
         split["tau"] = tau_value
         tau_values.append(split)
     
-    """
+    '''
     df = splits[0]
     for i in range (1, len(splits)):
         df = df.merge(splits[i])
-    """
-    """
+    '''
+    '''
     x = []
     y = []
 
@@ -542,12 +594,11 @@ def measure_tau(cell, test):
 
 
     plt.plot(x,y,"x")
-    """
+    '''
 
     return pd.concat(splits)
 
-
-
+"""
 
 
 
@@ -605,7 +656,8 @@ if __name__ == "__main__":
     
     #ocv = add_ocv("D","01")
 
-    print(measure_tau("C","01"))
+    #print(measure_tau("D","08"))
+    add_c1("C","01")
 
 
     """
