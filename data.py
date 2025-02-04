@@ -346,7 +346,7 @@ def calculate_model_voltage_0(cell,test):
     soh_value = soh(cell,test)
 
     df = add_ocv(cell,test) # Dataframe with R0 and OCV
-    df["Model Voltage 0"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
+    df["Model Voltage 0"] = [df["OCV"].iloc[i]-df["R0"].iloc[i]
                            * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
@@ -697,7 +697,7 @@ def calculate_model_voltage_1(cell, test):
     print("merged",df)
 
     # Calculate model voltage using vectorized operations
-    df["Model Voltage 1"] = df["OCV"] + df["R0"] * df1["Current"] + df["R1"] * df1["Current"] * (1-np.exp(-df["Total Time"] / df["tau"]))
+    df["Model Voltage 1"] = df["OCV"] - df["R0"] * abs(df1["Current"]) - df["R1"] * abs(df1["Current"]) * (1-np.exp(-df["Total Time"] / df["tau"]))
     
     print(df["R1"] * df1["Current"] * (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))
 
