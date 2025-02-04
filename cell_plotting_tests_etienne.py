@@ -67,54 +67,26 @@ import matplotlib.pyplot as plt
 from numpy.polynomial.polynomial import Polynomial
 import plot as pt
 import data as dt
+import pandas as pd
+import os
+import Tianhe_csvPlot as ti
 
-# Example Data (Replace with your actual OCV and SoC arrays)
-ocv = pt.soc_ocv("C", "06")["OCV"]
-
-# Replace with your OCV
-soc = pt.soc_ocv("C", "06")["SoC"]  # Replace with your SoC values
-
-# Fit a polynomial of degree 2
-coefficients = np.polyfit(ocv, soc, 4)
-polynomial = np.poly1d(coefficients)
-
-# Generate fitted values for plotting
-ocv_range = np.linspace(min(ocv), max(ocv), 100)
-fitted_soc = polynomial(ocv_range)
-
-
-def soc_ocv_fitted(cell,test):
-    soc = pt.soc_ocv(cell, test)["OCV"]
-    ocv = pt.soc_ocv(cell, test)["SoC"] 
-
-    # Fit a polynomial of degree 2
-    coefficients = np.polyfit(ocv, soc, 4)
-    polynomial = np.poly1d(coefficients)
-
-    # Generate fitted values for plotting
-    ocv_range = np.linspace(min(ocv), max(ocv), 100)
-    fitted_soc = polynomial(ocv_range)
-    return coefficients
-
-def deg4_model(x, a, b, c, d, e):
-    return e * x ** 4 + d * x ** 3 + c * x ** 2 + b * x + a
-
-def calculate_ocv(soc,cell,test):
-    coefficients = soc_ocv_fitted(cell,test)
-    return [deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc]
-
-# Plot the original data and the polynomial fit
-print(calculate_ocv(dt.soc("C","06"),"C","06"))
-print(soc_ocv_fitted("C","06"))
-plt.scatter(ocv, soc, label="Data points")
-plt.plot(ocv_range, fitted_soc, color="red", label=f"Polynomial fit: degree 4")
-plt.title("SoC vs OCV with Polynomial Fit")
-plt.xlabel("OCV (V)")
-plt.ylabel("SoC (%)")
-plt.legend()
+plt.plot(dt.extract("D","01")["Total Time"], dt.extract("D","01")["Voltage"])
+plt.show()
+df = dt.extract("D","01")
+df = df[(df["Total Time"] >= 56500) & (df["Total Time"] <= 56620)]
+print(df)
+plt.plot(df["Total Time"],df["Voltage"])
 plt.show()
 
+U_ocv = df["Voltage"].iloc[0]
 
+R0 = abs(U_ocv - df["Voltage"].iloc[1])/abs(df["Current"].iloc[1])
+print("R0",R0)
 
+model_voltage = [U_ocv + R0*df["Current"].iloc[i] for i in range(len(df))]
+print(model_voltage)
 
-
+plt.plot(df["Total Time"],model_voltage,'b')
+plt.plot(df["Total Time"],df["Voltage"],'r')
+plt.show()

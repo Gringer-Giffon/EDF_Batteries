@@ -631,7 +631,7 @@ def soc_tau_fitted(cell, test):
 
     # Fit a polynomial of degree 4
     
-    coefficients = np.polyfit(soc, tau, 5) #5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
+    coefficients = np.polyfit(soc,np.log(tau), 5) #5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
     fit = np.poly1d(coefficients)
     
 
@@ -697,15 +697,15 @@ def calculate_model_voltage_1(cell, test):
     print("merged",df)
 
     # Calculate model voltage using vectorized operations
-    df["Model Voltage 1"] = (
-        df["OCV"]
-        + df["R0"] * df1["Current"]
-        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"]))
+    df["Model Voltage 1"] = df["OCV"] + df["R0"] * df1["Current"] + df["R1"] * df1["Current"] * (1-np.exp(-df["Total Time"] / df["tau"]))
+    
+    print(df["R1"] * df1["Current"] * (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))
 
     # Handle NaN results if tau was NaN or zero
     #df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
 
     df.to_csv("model1")
+    print(df[df["Step"].isin(range(6,9))])
 
     return df
 
