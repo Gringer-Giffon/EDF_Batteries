@@ -67,54 +67,138 @@ import matplotlib.pyplot as plt
 from numpy.polynomial.polynomial import Polynomial
 import plot as pt
 import data as dt
-
-# Example Data (Replace with your actual OCV and SoC arrays)
-ocv = pt.soc_ocv("C", "06")["OCV"]
-
-# Replace with your OCV
-soc = pt.soc_ocv("C", "06")["SoC"]  # Replace with your SoC values
-
-# Fit a polynomial of degree 2
-coefficients = np.polyfit(ocv, soc, 4)
-polynomial = np.poly1d(coefficients)
-
-# Generate fitted values for plotting
-ocv_range = np.linspace(min(ocv), max(ocv), 100)
-fitted_soc = polynomial(ocv_range)
+import pandas as pd
+import os
+import Tianhe_csvPlot as ti
+import math
 
 
-def soc_ocv_fitted(cell,test):
-    soc = pt.soc_ocv(cell, test)["OCV"]
-    ocv = pt.soc_ocv(cell, test)["SoC"] 
+# Plot entire voltage
+# plt.plot(dt.extract("D", "01")["Total Time"],dt.extract("D", "01")["Voltage"], "x")
+# plt.show()
 
-    # Fit a polynomial of degree 2
-    coefficients = np.polyfit(ocv, soc, 4)
-    polynomial = np.poly1d(coefficients)
+def extract_pulse(cell,test):
+    '''
+    Parameters: cell (string), test(string) test number "01","09",10", etc..
 
-    # Generate fitted values for plotting
-    ocv_range = np.linspace(min(ocv), max(ocv), 100)
-    fitted_soc = polynomial(ocv_range)
-    return coefficients
+    Returns the dataframe of a spike in the middle of the pulse region of selected data
+    '''
+    df_pre = dt.extract(cell,test)
+    df = df_pre[abs(df_pre["Current"])== max(df_pre["Current"])] # Selects all pulse indexes
+    pulse_time = df["Total Time"].iloc[math.floor(len(df)/2)] # Selects an index in the middle of the data
+    # Selection of frame of impulse
+    if cell == "C":  
+        pulse_df = df_pre[(df_pre["Total Time"] >= pulse_time -20) & (df_pre["Total Time"] <= pulse_time + 15)]
+    elif cell == "D":
+        pulse_df = df_pre[(df_pre["Total Time"] >= pulse_time -200) & (df_pre["Total Time"] <= pulse_time + 150)]
+    else:
+        print("Invalid choice of cell")
+        return None
+    return pulse_df
 
-def deg4_model(x, a, b, c, d, e):
-    return e * x ** 4 + d * x ** 3 + c * x ** 2 + b * x + a
+# Extract one pulse
+cell = input("which cell would you like to analyse: ")
+test = input("which test would you like to analyse: ")
+df = extract_pulse(cell,test)
 
-def calculate_ocv(soc,cell,test):
-    coefficients = soc_ocv_fitted(cell,test)
-    return [deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc]
+#df = df[(df["Total Time"] >= 56500) & (df["Total Time"] <= 56620)]
 
-# Plot the original data and the polynomial fit
-print(calculate_ocv(dt.soc("C","06"),"C","06"))
-print(soc_ocv_fitted("C","06"))
-plt.scatter(ocv, soc, label="Data points")
-plt.plot(ocv_range, fitted_soc, color="red", label=f"Polynomial fit: degree 4")
-plt.title("SoC vs OCV with Polynomial Fit")
-plt.xlabel("OCV (V)")
-plt.ylabel("SoC (%)")
-plt.legend()
+plt.plot(df["Total Time"], df["Voltage"], "x")
+plt.show()
+
+
+def spike_index(pulse):
+    '''
+    Parameters: pulse (dataframe) data of your selected pulse
+
+    Returns the index of the pulse spike
+    '''
+    voltage_diff = np.diff(pulse["Voltage"].values)
+
+    # threshold for detection
+    threshold = 0.05  
+
+    # index of spike
+    spike_index = np.argmax(np.abs(voltage_diff) > threshold)
+
+    return spike_index
+
+
+# Oth order
+spike = spike_index(df)
+U_ocv = df["Voltage"].iloc[spike-1]
+
+R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1])
+print("R0", R0)
+
+model_voltage_0 = [(U_ocv - R0*abs(df["Current"].iloc[i])) for i in range(len(df))]
+print(model_voltage_0)
+
+#plt.plot(df["Total Time"],model_voltage_0,'b')
+plt.plot(df["Total Time"], df["Voltage"], 'r')
+
+# 1st order non fitted
+R1 = abs(df["Voltage"].iloc[spike+1] - min(df["Voltage"])) / \
+    abs(df["Current"][df["Voltage"] == min(df["Voltage"])]).iloc[0]
+print("R1", R1)
+target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
+    abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
+
+idx = (df["Voltage"] - target_voltage).abs().idxmin()
+
+tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
+
+print(tau)
+print("voltages", df["Voltage"])
+print("correct idx voltage,", df["Voltage"].loc[idx])
+
+model_voltage_1 = [(model_voltage_0[i] - R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
+    df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau))) for i in range(len(df))]
+
+print(df)
+print(model_voltage_1)
+plt.plot(df["Total Time"], model_voltage_1, "b")
 plt.show()
 
 
 
 
 
+# 1st order fitted
+
+from scipy.optimize import curve_fit
+
+def battery_model(t, R0, R1, tau, U_ocv):
+    current = np.abs(df["Current"].values)  # Ensure the current is positive
+    return U_ocv + R0 * current + R1 * current * (1 - np.exp(-t / tau))
+
+print([R0, R1, tau, U_ocv])
+
+popt, _ = curve_fit(battery_model, df["Total Time"]-df["Total Time"].iloc[0], df["Voltage"], p0=[R0, R1, tau, U_ocv])
+
+R0_fit, R1_fit, tau_fit, U_ocv_fit = popt
+
+model_voltage_fit = battery_model(df["Total Time"]-df["Total Time"].iloc[0], *popt)
+print(popt)
+print(model_voltage_fit)
+#plt.plot(df["Total Time"], df["Voltage"], 'r', label='Data')
+#plt.plot(df["Total Time"], model_voltage_fit, 'b', label='Fitted Model')
+#plt.plot(df['Total Time'],model_voltage_0,'g')
+#plt.legend()
+#plt.show()
+
+
+
+# Error estimation
+
+def calculate_distance(voltages):
+    error= 0
+    errors = []
+    for i in range(len(voltages)):
+        error+= np.sqrt(voltages[i]**2 - df["Voltage"].iloc[i]**2)
+        errors.append(error)
+    return errors
+
+plt.plot(df["Total Time"],calculate_distance(model_voltage_0),'r')
+plt.plot(df["Total Time"], calculate_distance(model_voltage_1),'g')
+plt.show()
