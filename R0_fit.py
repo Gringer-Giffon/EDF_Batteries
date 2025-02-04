@@ -7,10 +7,47 @@ import plot as pt
 import R0_identification_tianhe as rz
 import Tianhe_csvPlot as ti
 import data as dt
+import OCV_fit
+
+folderPath = f'./cells_data'
+
+csvFiles = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
+
+csvFiles_C = [f for f in csvFiles if '_C_' in f]
+csvFiles_D = [f for f in csvFiles if '_D_' in f]
+
+dfc = [pd.read_csv(os.path.join(folderPath, file))
+       for file in csvFiles_C]      # Dataframes for Cell C
+dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
 
 R0_matrix = []
 SoC_matrix = []
 SoH = []
+
+cat =  """      ／＞　 フ
+      | 　_　_|  
+   ／` ミ＿xノ  
+  /　　　　 | 
+ /　 ヽ　　 ﾉ
+ │　　|　|　| 
+／￣|　　 |　| 
+(￣ヽ＿_ヽ_)__) 
+＼二)"""
+
+done = (" ____                   \n"
+      "|  _ \\  ___  _ __   ___ \n"
+      "| | | |/ _ \\| '_ \\ / _ \\\n"
+      "| |_| | (_) | | | |  __/\n"
+      "|____/ \\___/|_| |_|\\___|")
+
+processing = (" ____                              _             \n"
+      "|  _ \\ _ __ ___   ___ ___  ___ ___(_)_ __   __ _ \n"
+      "| |_) | '__/ _ \\ / __/ _ \\/ __/ __| | '_ \\ / _` |\n"
+      "|  __/| | | (_) | (_|  __/\\__ \\__ \\ | | | | (_| |\n"
+      "|_|   |_|  \\___/ \\___\\___||___/___/_|_| |_|\\__, |\n"
+      "                                           |___/ ")
+
+
 
 def R0_SoC_C(test):
     df = dt.calculate_model_voltage_0("C",test)
@@ -86,10 +123,17 @@ def f(x, y):
             y_power = i
             terms.append((x ** x_power) * (y ** y_power))
     return np.dot(terms, coefficients)
-
+'''
+def add_ocv(df, cell, test):
+    df["OCV"] = dt.calculate_ocv(df["SoC"], cell, test)
+    return df
+'''
 
 if __name__ == '__main__':
-    test = '06'
+    print(cat)
+    test = input('which test are you looking for: ')
+    test = str(int(test)).zfill(2)
+    '''
     R0, SoC = R0_SoC_C(test)
     SoH = dt.soh('C', test)
     
@@ -98,4 +142,28 @@ if __name__ == '__main__':
     plt.plot(SoC, R0_pred, 'r')
 
     plt.show()
+    '''
+    print(processing)
+    df = dfc[int(test)]
+    
+    df['SoC'] = dt.soc('C', test)
+    #df = add_ocv(df, 'C', test)
+    SoH = dt.soh('C', test)
+    #print(df)
+    print(done)
 
+
+    OCV = [OCV_fit.f(SoC_num, SoH) for SoC_num in df['SoC']]
+    R0 = [f(SoC_num, SoH) for SoC_num in df['SoC']]
+
+    df['R0'] = R0
+    df['OCV'] = OCV
+
+    df['Model Voltage'] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
+                           * df["Current"].iloc[i] for i in range(len(df))]
+    
+    plt.plot(df['Total Time'], df['Voltage'], color = '#8C7194')    
+    plt.plot(df['Total Time'], df['Model Voltage'], color = '#9A163A')
+    plt.show()
+    
+    
