@@ -10,6 +10,7 @@ import Tianhe_csvPlot as ti
 import math
 import R0_fit
 import OCV_fit
+from scipy.optimize import curve_fit
 
 
 folderPath = f'./cells_data'
@@ -302,6 +303,7 @@ def add_R0(cell,test):
 
     '''
     global soh_value
+
     time_between_dupes = 300 #added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
@@ -333,11 +335,15 @@ def add_R0(cell,test):
 
 #----------------------------------------------------MODEL 0---------------------------------------------------------------
 def calculate_model_voltage_0(cell,test):
+    
     '''
     Parameters: cell (string) "C" or "D", test(string), cell test
 
     Returns dataframe containing model voltage for 0th order Thevenin model
     '''
+    global soh_value
+
+    soh_value = soh(cell,test)
 
     df = add_ocv(cell,test) # Dataframe with R0 and OCV
     df["Model Voltage 0"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
@@ -407,17 +413,6 @@ def measure_r1(cell, test):
     for i in range (1, len(splits)):
         df = df.merge(splits[i])
     """
-    x = []
-    y = []
-
-    for split in splits:
-        x.append(split["SoC"].iloc[0])
-        y.append(split["R1"].iloc[1])
-
-
-    plt.plot(x,y,"x")
-    
-
     return pd.concat(splits)
     
 def soc_R1_fitted(cell, test):
@@ -433,6 +428,8 @@ def soc_R1_fitted(cell, test):
     # Fit a polynomial of degree 4
     coefficients = np.polyfit(soc, R1, 6) #5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
     polynomial = np.poly1d(coefficients)
+
+    #plt.plot(soc,R1,"b")
 
     # Generate fitted values for plotting
     # ocv_range = np.linspace(min(ocv), max(ocv), 100)
@@ -478,10 +475,10 @@ def add_r1(cell, test):
 
 def find_tau(cell,test):
     if cell == "D":
-        df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(6,7+1))]
+        df = add_r1(cell,test)[add_r1(cell,test)["Step"] == 6]
         print("r1",df)
     elif cell == "C":
-        df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(7,9+1))]
+        df = add_r1(cell,test)[add_r1(cell,test)["Step"] == 7]
         print("r1",df)
     else:
         print("Invalid cell")
@@ -508,25 +505,37 @@ def measure_tau(cell,test):
     
     for split in splits:
         #split["tau"] = None
+        #split["tau"] = abs(split["Total Time"][abs(split["Voltage"] == 0.63*split["Voltage"].iloc[-1]) < 0.2].iloc[0] - split["Total Time"].iloc[0])
+
+        """
         time_min = split["Total Time"][split["Voltage"] == min(split["Voltage"])].iloc[0]
-        target_voltage = 0.95*max(split["Voltage"])
-        time_95 = split["Total Time"][abs(split["Voltage"] - target_voltage) < 0.2].iloc[0]
-        tau = [abs(time_95-time_min)/3]*len(split["Total Time"])
+        target_voltage = 0.63*max(split["Voltage"])
+        time_63 = split["Total Time"][abs(split["Voltage"] - target_voltage) < 0.2].iloc[0]
+        tau = [abs(time_63-time_min)]*len(split["Total Time"])
         print("min",time_min)
-        print("95",time_95)
+        print("63",time_63)
         print("tau",tau)
         split["tau"] = tau
+        """
+        final_voltage = min(split["Voltage"])
+        print("final voltage,", final_voltage)
+        target_voltage = max(split["Voltage"]) - 0.63*abs(max(split["Voltage"]-min(split["Voltage"])))
+        print("target voltage",target_voltage)
+    
+        # Find the index where voltage is closest to target
+        idx = (split["Voltage"] - target_voltage).abs().idxmin()
+    
+        if idx is not None and idx > 0:
+            split["tau"] = split["Total Time"].loc[idx] - split["Total Time"].iloc[0]
+            print("voltages",split["Voltage"])
+            print("correct idx voltage,",split["Voltage"].loc[idx])
+        else:
+            split["tau"] = np.nan  # or some default value
 
-        print(split)
+        print(f"Final voltage: {final_voltage}, Target voltage: {target_voltage}, Tau: {split['tau']}")
 
     return pd.concat(splits)
 
-def add_c1(cell,test):
-    df = add_r1(cell,test)
-    df["tau"] = 3
-    df["C1"] =df["tau"]/df["R1"]
-    print(df)
-    return df
 
 """
 def find_tau(cell,test):
@@ -610,8 +619,58 @@ def measure_tau(cell, test):
     return pd.concat(splits)
 
 """
+def soc_tau_fitted(cell, test):
+    '''
+    Parameters: cell (string), test (string)
 
+    Returns fitted polynomial between SoC and R1
+    '''
+    df = measure_tau(cell,test)
+    soc = df["SoC"]
+    tau = df["tau"]
 
+    # Fit a polynomial of degree 4
+    
+    coefficients = np.polyfit(soc, tau, 5) #5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
+    fit = np.poly1d(coefficients)
+    
+
+    #plt.plot(soc,np.log(tau),"xb")
+
+    # Generate fitted values for plotting
+    # ocv_range = np.linspace(min(ocv), max(ocv), 100)
+    # fitted_soc = polynomial(ocv)
+
+    return fit
+
+def calculate_tau(soc, cell, test):
+    '''
+    Parameters: soc (list) soc values, cell (string), test (string)
+
+    Returns list of calculated R1 values using the fitted polynomial relation between OCV and R1
+    '''
+
+    #coefficients = soc_R1_fitted(cell, test)
+    # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
+
+    """
+    print(pt.soc_ocv(cell, test)["SoC"])
+    plt.plot()
+    """
+    poly = soc_tau_fitted(cell, test)
+    return [poly(soc) for soc in soc]
+
+def add_tau(cell,test):
+    df = add_r1(cell,test)
+    df["tau"] =calculate_tau(df["SoC"],cell,test)
+    print("add tau",df)
+    return df
+
+def add_c1(cell,test):
+    df = add_tau(cell,test)
+    df["C1"] =df["tau"]/df["R1"]
+    print("add c1",df)
+    return df
 
 
 
@@ -631,12 +690,12 @@ def calculate_model_voltage_1(cell, test):
     df1 = add_c1(cell, test)
     print("df1",df1)
 
-    df1["tau"] = 3
     #df["Model Voltage 1"] = df["Model Voltage 0"].copy()
 
     # Merge df1 into df to align by "Total Time" directly
     df = df.merge(df1[["Total Time","R1", "tau", "C1"]], on="Total Time", how="left")
     print("merged",df)
+
     # Calculate model voltage using vectorized operations
     df["Model Voltage 1"] = (
         df["OCV"]
