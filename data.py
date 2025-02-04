@@ -6,8 +6,10 @@ import os
 from scipy.integrate import cumulative_trapezoid
 import plot as pt
 import R0_identification_tianhe as rz
-#import Tianhe_csvPlot as ti
+import Tianhe_csvPlot as ti
 import math
+import R0_fit
+import OCV_fit
 
 
 folderPath = f'./cells_data'
@@ -57,7 +59,7 @@ def extract(cell, test):
     return data
 
 
-def extract_step(first, second, cell, test):
+def extract_step_2(first, second, cell, test):
     '''
     Parameters: first (int) first step, second (int) second step, cell (string) C or D, test (string) in the form 00, 01, etc..
 
@@ -77,7 +79,7 @@ def extract_step(first, second, cell, test):
             break
     return step_data
 
-def extract_step_2(first, second, cell, test):
+def extract_step(first, second, cell, test):
     if type(test) == str:
         test = int(test)
     if cell == 'C':
@@ -157,10 +159,11 @@ def soh(cell, test):
     Calculates the state of health of a cell at a given time 
     Returns SOH value of test
     '''
+    print("I am in the SOH function")
     Q_remaining = q_remaining(cell,test)
-
+    print("I have Q remaining")
     q_init = q_remaining(cell,"00")
-
+    print("I have q initial")
     SOH = Q_remaining / q_init
     #print(Q_remaining, q_init)
     return SOH
@@ -247,7 +250,7 @@ def soc_ocv_fitted(cell, test):
 
     return polynomial
 
-
+"""
 def calculate_ocv(soc, cell, test):
     '''
     Parameters: soc (list) soc values, cell (string), test (string)
@@ -258,14 +261,18 @@ def calculate_ocv(soc, cell, test):
     coefficients = soc_ocv_fitted(cell, test)
     # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
 
-    """
+    '''
     print(pt.soc_ocv(cell, test)["SoC"])
     plt.plot()
-    """
+    '''
     poly = soc_ocv_fitted(cell, test)
     return [poly(soc) for soc in soc]
     # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for soc in soc]
+"""
 
+def calculate_ocv(soc,cell,test):
+    global soh_value
+    return [OCV_fit.f(soc_val,soh_value) for soc_val in soc]
 
 def add_ocv(cell, test):
     '''
@@ -294,11 +301,12 @@ def add_R0(cell,test):
     Returns dataframe with original data and SoC and R0
 
     '''
+    global soh_value
     time_between_dupes = 300 #added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
-    df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
-    
+    #df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
+    '''
     R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
@@ -311,6 +319,8 @@ def add_R0(cell,test):
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
     #df["R0"] = R0_no_dupes
+    '''
+    df["R0"] = [R0_fit.f(soc_value,soh_value) for soc_value in  df["SoC"]]
 
     # rz.R0_replace(df)
     # print(df, '\n')
@@ -469,8 +479,10 @@ def add_r1(cell, test):
 def find_tau(cell,test):
     if cell == "D":
         df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(6,7+1))]
+        print("r1",df)
     elif cell == "C":
         df = add_r1(cell,test)[add_r1(cell,test)["Step"].isin(range(7,9+1))]
+        print("r1",df)
     else:
         print("Invalid cell")
         return None
@@ -510,12 +522,11 @@ def measure_tau(cell,test):
     return pd.concat(splits)
 
 def add_c1(cell,test):
-    df = measure_tau(cell,test)
+    df = add_r1(cell,test)
+    df["tau"] = 3
     df["C1"] =df["tau"]/df["R1"]
     print(df)
     return df
-
-
 
 """
 def find_tau(cell,test):
@@ -612,23 +623,30 @@ def calculate_model_voltage_1(cell, test):
 
     Returns dataframe of initial value and including 0th order and first order voltage and parameters
     '''
+    global soh_value
+    soh_value = soh(cell,test)
 
     df = calculate_model_voltage_0(cell, test)
-    df1 = measure_r1(cell, test)
+    print("calculated model 0")
+    df1 = add_c1(cell, test)
+    print("df1",df1)
 
-    df["Model Voltage 1"] = df["Model Voltage 0"].copy()
+    df1["tau"] = 3
+    #df["Model Voltage 1"] = df["Model Voltage 0"].copy()
 
     # Merge df1 into df to align by "Total Time" directly
-    df = df.merge(df1[["Total Time","R1", "tau"]], on="Total Time", how="left")
-    
+    df = df.merge(df1[["Total Time","R1", "tau", "C1"]], on="Total Time", how="left")
+    print("merged",df)
     # Calculate model voltage using vectorized operations
     df["Model Voltage 1"] = (
         df["OCV"]
         + df["R0"] * df1["Current"]
-        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"].replace(0.0, np.nan)))
+        + df["R1"] * df1["Current"] * np.exp(-df["Total Time"] / df["tau"]))
 
     # Handle NaN results if tau was NaN or zero
-    df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
+    #df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
+
+    df.to_csv("model1")
 
     return df
 
@@ -657,7 +675,7 @@ if __name__ == "__main__":
     #ocv = add_ocv("D","01")
 
     #print(measure_tau("D","08"))
-    add_c1("C","01")
+    print(calculate_model_voltage_1("C","01"))
 
 
     """
