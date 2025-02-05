@@ -275,7 +275,7 @@ def add_ocv(cell, test):
     Returns dataframe containing OCV
     '''
 
-    df = add_R0(cell, test)  # Data fram with R0
+    df = add_R0(cell, test)  # Data frame with R0
     df["OCV"] = calculate_ocv(df["SoC"], cell, test)
     return df
 
@@ -290,11 +290,13 @@ def add_R0(cell, test):
     '''
     global soh_value
 
+    
     time_between_dupes = 300  # added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
+    """
     # df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
-    '''
+    
     R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
@@ -307,7 +309,7 @@ def add_R0(cell, test):
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
     #df["R0"] = R0_no_dupes
-    '''
+    """
     df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
 
     # rz.R0_replace(df)
@@ -702,8 +704,17 @@ def calculate_model_voltage_1(cell, test):
 
     return df
 
+"""
+def table_soc(cell,test):
+    df = soc_ocv(cell,test)
+    df1 = add_R0(cell,test)
+    df = df.merge(df1[["Total Time", "R0"]],
+                  on="Total Time", how="left")
+    return df
+"""
 
 if __name__ == "__main__":
+    #print(table_soc("C","01"))
     # print(soc("C","01"))
     """
     plot_r_soc("C","01")
@@ -722,7 +733,8 @@ if __name__ == "__main__":
     # ocv = add_ocv("D","01")
 
     # print(measure_tau("D","08"))
-    print(calculate_model_voltage_1("C", "01"))
+    #print(calculate_model_voltage_1("C", "01"))
+    
 
     """
     df = measure_r1("C","01")

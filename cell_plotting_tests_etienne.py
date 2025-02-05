@@ -1,67 +1,3 @@
-"""
-#_______________________________________________________________________
-
-import numpy as np
-from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
-import plot as pt
-from sklearn.linear_model import LinearRegression
-
-
-
-# Define the model function
-
-def constant_model(x, a):
-    return a
-
-def linear_model(x, a, b):
-    return a * x + b
-
-def quadratic_model(x, a, b, c):
-    return a * x ** 2 + b * x + c
-
-def cubic_model(x, a, b, c, d):
-    return a * x ** 3 + b * x ** 2 + c * x * d
-
-
-
-def deg5_model(x, a, b, c, d, e, f):
-    return a * x ** 5 + b * x ** 4 + c * x ** 3 + d * x ** 2 + e * x + f
-
-def deg6_model(x, a, b, c, d, e, f, g):
-    return a * x ** 6 + b * x ** 5 + c * x ** 4 + d * x ** 3 + e * x ** 2 + f * x + g
-
-def deg7_model(x, a, b, c, d, e, f, g, h):
-    return a * x ** 7 + b * x ** 6 + c * x ** 5 + d * x ** 4 + e * x ** 3 + f * x ** 2 + g * x + h
-
-def deg8_model(x, a, b, c, d, e, f, g, h, i):
-    return a * x ** 8 + b * x ** 7 + c * x ** 6 + d * x ** 5 + e * x ** 4 + f * x ** 3 + g * x ** 2 + h * x + i
-
-
-polynomials = [constant_model, linear_model, quadratic_model, 
-               cubic_model, deg4_model, deg5_model, 
-               deg6_model, deg7_model, deg8_model]
-
-
-
-# Generate some data
-print(pt.soc_ocv("C","06"))
-x_data = pt.soc_ocv("C","06")["OCV"]
-
-y_data = pt.soc_ocv("C","06")["SoC"]
-
-# Fit the model to the data
-params, covariance = curve_fit(cubic_model, x_data, y_data)
-
-y_data_check = params[3] + params[2] * x_data + params[1] * x_data**2 + params[0] * x_data**3
-
-# Output the parameters
-print("Fitted parameters:", params)
-plt.plot(x_data, y_data, "ro")
-plt.plot(x_data, y_data_check, "b--")
-plt.show()
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.polynomial.polynomial import Polynomial
@@ -97,7 +33,6 @@ def extract_pulse(cell,test):
     return pulse_df
 
 
-
 def spike_index(pulse):
     '''
     Parameters: pulse (dataframe) data of your selected pulse
@@ -114,6 +49,17 @@ def spike_index(pulse):
 
     return spike_index
 
+def spike_indexes(df):
+    voltage_diff = np.diff(df["Voltage"].values)
+
+    # threshold for detection
+    threshold = 0.03
+
+    # index of spike
+    spike_indexes = np.where(np.abs(voltage_diff) > threshold)[0].tolist()
+    #spike_indexes = np.where(abs(df["Current"]) == 32)[0].tolist()
+    return spike_indexes
+
 def calculate_distance(voltages):
     error= 0
     errors = []
@@ -122,10 +68,8 @@ def calculate_distance(voltages):
         errors.append(error)
     return errors
 
-
-if __name__ == "__main__":
-
-    # Extract one pulse
+def model_pulse():
+# Extract one pulse
     cell = input("which cell would you like to analyse: ")
     test = input("which test would you like to analyse: ")
     df = extract_pulse(cell,test)
@@ -134,7 +78,6 @@ if __name__ == "__main__":
 
     plt.plot(df["Total Time"], df["Voltage"], "x")
     plt.show()
-
 
     # Oth order
     spike = spike_index(df)
@@ -178,50 +121,123 @@ if __name__ == "__main__":
     plt.ylabel("Voltage (V)")
     plt.legend(["Data","Model"])
     plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-    # 1st order fitted
-
-    from scipy.optimize import curve_fit
-
-    def battery_model(t, R0, R1, tau, U_ocv):
-        current = np.abs(df["Current"].values)  # Ensure the current is positive
-        return U_ocv + R0 * current + R1 * current * (1 - np.exp(-t / tau))
-
-    print([R0, R1, tau, U_ocv])
-
-    popt, _ = curve_fit(battery_model, df["Total Time"]-df["Total Time"].iloc[0], df["Voltage"], p0=[R0, R1, tau, U_ocv])
-
-    R0_fit, R1_fit, tau_fit, U_ocv_fit = popt
-
-    model_voltage_fit = battery_model(df["Total Time"]-df["Total Time"].iloc[0], *popt)
-    print(popt)
-    print(model_voltage_fit)
-    #plt.plot(df["Total Time"], df["Voltage"], 'r', label='Data')
-    #plt.plot(df["Total Time"], model_voltage_fit, 'b', label='Fitted Model')
-    #plt.plot(df['Total Time'],model_voltage_0,'g')
-    #plt.legend()
     #plt.show()
-"""
-
-    # Error estimation
 
 
+def model_pulses():
+    cell = input("which cell would you like to analyse: ")
+    test = input("which test would you like to analyse: ")
+    df = dt.extract(cell,test)
+    #print(df)
+    df = df[(df["Total Time"] >= 1700) & (df["Total Time"] <= 24500)]
+    spike_indices = spike_indexes(df)
+    
+    for spike in spike_indices:
+        if cell == "C":  
+            pulse_df = df[(df["Total Time"] >= df["Total Time"].iloc[spike] -20) & (df["Total Time"] <= df["Total Time"].iloc[spike] + 15)]
+        elif cell == "D":
+            pulse_df = df[(df["Total Time"] >= df["Total Time"].iloc[spike] -200) & (df["Total Time"] <= df["Total Time"].iloc[spike] + 150)]
+        else:
+            print("Invalid choice of cell")
+        # Oth order
+        df = pulse_df
+        print(df)
+        print(spike)
+        print(df["Voltage"])
+        U_ocv = df["Voltage"].iloc[spike]
 
-plt.plot(df["Total Time"],calculate_distance(model_voltage_0),'r')
-plt.plot(df["Total Time"], calculate_distance(model_voltage_1),'g')
-plt.show()
+        R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1])
+        #print("R0", R0)
+
+        model_voltage_0 = [
+        U_ocv + R0 * abs(df["Current"].iloc[i]) if df["Current"].iloc[i] > 0
+        else U_ocv - R0 * abs(df["Current"].iloc[i])
+        for i in range(len(df))
+    ]
+        
+        #print(model_voltage_0)
+
+        #plt.plot(df["Total Time"],model_voltage_0,'b')
+        #plt.plot(df["Total Time"], df["Voltage"], 'r')
+
+        # 1st order non fitted
+        R1 = abs(df["Voltage"].iloc[spike+1] - min(df["Voltage"])) / \
+            abs(df["Current"][df["Voltage"] == min(df["Voltage"])]).iloc[0]
+        #print("R1", R1)
+        target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
+            abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
+
+        idx = (df["Voltage"] - target_voltage).abs().idxmin()
+
+        tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
+
+        #print(tau)
+
+        model_voltage_1 = [(model_voltage_0[i] + (R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
+            df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau)))) if df["Current"].iloc[i] > 0 else (model_voltage_0[i] - (R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
+            df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau))))  for i in range(len(df))]
+        
+        plt.plot(df["Total Time"], model_voltage_1, "b")
+    plt.show()
+
+
+
+
+if __name__ == "__main__":
+    model_pulse()
+    
+    #model_pulses()   
+
+    #print(extract_pulses(cell,test))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    """
+        # 1st order fitted
+
+        from scipy.optimize import curve_fit
+
+        def battery_model(t, R0, R1, tau, U_ocv):
+            current = np.abs(df["Current"].values)  # Ensure the current is positive
+            return U_ocv + R0 * current + R1 * current * (1 - np.exp(-t / tau))
+
+        print([R0, R1, tau, U_ocv])
+
+        popt, _ = curve_fit(battery_model, df["Total Time"]-df["Total Time"].iloc[0], df["Voltage"], p0=[R0, R1, tau, U_ocv])
+
+        R0_fit, R1_fit, tau_fit, U_ocv_fit = popt
+
+        model_voltage_fit = battery_model(df["Total Time"]-df["Total Time"].iloc[0], *popt)
+        print(popt)
+        print(model_voltage_fit)
+        #plt.plot(df["Total Time"], df["Voltage"], 'r', label='Data')
+        #plt.plot(df["Total Time"], model_voltage_fit, 'b', label='Fitted Model')
+        #plt.plot(df['Total Time'],model_voltage_0,'g')
+        #plt.legend()
+        #plt.show()
+
+        # Error estimation
+
+
+    plt.plot(df["Total Time"],calculate_distance(model_voltage_0),'r')
+    plt.plot(df["Total Time"], calculate_distance(model_voltage_1),'g')
+    plt.show()
+    """
