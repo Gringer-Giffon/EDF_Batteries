@@ -328,7 +328,8 @@ def calculate_model_voltage_0(cell, test):
 
     df = add_ocv(cell, test)  # Dataframe with R0 and OCV
     df["Model Voltage 0"] = [df["OCV"].iloc[i]-df["R0"].iloc[i]
-                             * df["Current"].iloc[i] for i in range(len(df))]
+                             * abs(df["Current"].iloc[i]) if df["Current"].iloc[i] <0 else df["OCV"].iloc[i]+df["R0"].iloc[i]
+                             * abs(df["Current"].iloc[i]) for i in range(len(df))]
     return df
 
 
@@ -686,8 +687,9 @@ def calculate_model_voltage_1(cell, test):
     print("merged", df)
 
     # Calculate model voltage using vectorized operations
-    df["Model Voltage 1"] = df["Model Voltage 0"] - df["R1"] * \
-        df1["Current"] * (1-np.exp(-df["Total Time"] / df["tau"]))
+    df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] - df["R1"].iloc[i] * \
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
 
     print(df["R1"] * df1["Current"] *
           (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))

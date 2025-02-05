@@ -96,15 +96,6 @@ def extract_pulse(cell,test):
         return None
     return pulse_df
 
-# Extract one pulse
-cell = input("which cell would you like to analyse: ")
-test = input("which test would you like to analyse: ")
-df = extract_pulse(cell,test)
-
-#df = df[(df["Total Time"] >= 56500) & (df["Total Time"] <= 56620)]
-
-plt.plot(df["Total Time"], df["Voltage"], "x")
-plt.show()
 
 
 def spike_index(pulse):
@@ -123,74 +114,6 @@ def spike_index(pulse):
 
     return spike_index
 
-
-# Oth order
-spike = spike_index(df)
-U_ocv = df["Voltage"].iloc[spike-1]
-
-R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1])
-print("R0", R0)
-
-model_voltage_0 = [(U_ocv - R0*abs(df["Current"].iloc[i])) for i in range(len(df))]
-print(model_voltage_0)
-
-#plt.plot(df["Total Time"],model_voltage_0,'b')
-plt.plot(df["Total Time"], df["Voltage"], 'r')
-
-# 1st order non fitted
-R1 = abs(df["Voltage"].iloc[spike+1] - min(df["Voltage"])) / \
-    abs(df["Current"][df["Voltage"] == min(df["Voltage"])]).iloc[0]
-print("R1", R1)
-target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
-    abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
-
-idx = (df["Voltage"] - target_voltage).abs().idxmin()
-
-tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
-
-print(tau)
-print("voltages", df["Voltage"])
-print("correct idx voltage,", df["Voltage"].loc[idx])
-
-model_voltage_1 = [(model_voltage_0[i] - R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
-    df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau))) for i in range(len(df))]
-
-print(df)
-print(model_voltage_1)
-plt.plot(df["Total Time"], model_voltage_1, "b")
-plt.show()
-
-
-
-
-
-# 1st order fitted
-
-from scipy.optimize import curve_fit
-
-def battery_model(t, R0, R1, tau, U_ocv):
-    current = np.abs(df["Current"].values)  # Ensure the current is positive
-    return U_ocv + R0 * current + R1 * current * (1 - np.exp(-t / tau))
-
-print([R0, R1, tau, U_ocv])
-
-popt, _ = curve_fit(battery_model, df["Total Time"]-df["Total Time"].iloc[0], df["Voltage"], p0=[R0, R1, tau, U_ocv])
-
-R0_fit, R1_fit, tau_fit, U_ocv_fit = popt
-
-model_voltage_fit = battery_model(df["Total Time"]-df["Total Time"].iloc[0], *popt)
-print(popt)
-print(model_voltage_fit)
-#plt.plot(df["Total Time"], df["Voltage"], 'r', label='Data')
-#plt.plot(df["Total Time"], model_voltage_fit, 'b', label='Fitted Model')
-#plt.plot(df['Total Time'],model_voltage_0,'g')
-#plt.legend()
-#plt.show()
-
-
-
-# Error estimation
-
 def calculate_distance(voltages):
     error= 0
     errors = []
@@ -198,6 +121,106 @@ def calculate_distance(voltages):
         error+= np.sqrt(voltages[i]**2 - df["Voltage"].iloc[i]**2)
         errors.append(error)
     return errors
+
+
+if __name__ == "__main__":
+
+    # Extract one pulse
+    cell = input("which cell would you like to analyse: ")
+    test = input("which test would you like to analyse: ")
+    df = extract_pulse(cell,test)
+
+    #df = df[(df["Total Time"] >= 56500) & (df["Total Time"] <= 56620)]
+
+    plt.plot(df["Total Time"], df["Voltage"], "x")
+    plt.show()
+
+
+    # Oth order
+    spike = spike_index(df)
+    U_ocv = df["Voltage"].iloc[spike]
+
+    R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1])
+    print("R0", R0)
+
+    model_voltage_0 = [
+    U_ocv + R0 * abs(df["Current"].iloc[i]) if df["Current"].iloc[i] > 0
+    else U_ocv - R0 * abs(df["Current"].iloc[i])
+    for i in range(len(df))
+]
+    
+    print(model_voltage_0)
+
+    #plt.plot(df["Total Time"],model_voltage_0,'b')
+    plt.plot(df["Total Time"], df["Voltage"], 'r')
+
+    # 1st order non fitted
+    R1 = abs(df["Voltage"].iloc[spike+1] - min(df["Voltage"])) / \
+        abs(df["Current"][df["Voltage"] == min(df["Voltage"])]).iloc[0]
+    print("R1", R1)
+    target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
+        abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
+
+    idx = (df["Voltage"] - target_voltage).abs().idxmin()
+
+    tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
+
+    print(tau)
+
+    model_voltage_1 = [(model_voltage_0[i] + (R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
+        df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau)))) if df["Current"].iloc[i] > 0 else (model_voltage_0[i] - (R1 * abs(df["Current"].iloc[i])*(1-np.exp(-(
+        df["Total Time"].iloc[i]-abs(df["Total Time"].iloc[0]))/tau))))  for i in range(len(df))]
+
+    print("real voltage",df["Voltage"],"model voltage 1",model_voltage_1,"R0",R0,"R1",R1,"tau",tau,"Uocv",U_ocv)
+    plt.plot(df["Total Time"], model_voltage_1, "b")
+    plt.title("Model and data voltage comparison over time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Voltage (V)")
+    plt.legend(["Data","Model"])
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+    # 1st order fitted
+
+    from scipy.optimize import curve_fit
+
+    def battery_model(t, R0, R1, tau, U_ocv):
+        current = np.abs(df["Current"].values)  # Ensure the current is positive
+        return U_ocv + R0 * current + R1 * current * (1 - np.exp(-t / tau))
+
+    print([R0, R1, tau, U_ocv])
+
+    popt, _ = curve_fit(battery_model, df["Total Time"]-df["Total Time"].iloc[0], df["Voltage"], p0=[R0, R1, tau, U_ocv])
+
+    R0_fit, R1_fit, tau_fit, U_ocv_fit = popt
+
+    model_voltage_fit = battery_model(df["Total Time"]-df["Total Time"].iloc[0], *popt)
+    print(popt)
+    print(model_voltage_fit)
+    #plt.plot(df["Total Time"], df["Voltage"], 'r', label='Data')
+    #plt.plot(df["Total Time"], model_voltage_fit, 'b', label='Fitted Model')
+    #plt.plot(df['Total Time'],model_voltage_0,'g')
+    #plt.legend()
+    #plt.show()
+"""
+
+    # Error estimation
+
+
 
 plt.plot(df["Total Time"],calculate_distance(model_voltage_0),'r')
 plt.plot(df["Total Time"], calculate_distance(model_voltage_1),'g')
