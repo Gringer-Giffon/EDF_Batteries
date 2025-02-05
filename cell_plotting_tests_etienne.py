@@ -70,7 +70,7 @@ def measure_R0(pulse_df):
         else:
             R0.append(0)
     return R0
-
+"""
 def measure_tau(pulse_df):
     spikes = []
     for pulse in pulse_df:
@@ -101,7 +101,8 @@ def measure_tau(pulse_df):
         tau.append(pulse["Total Time"].loc[idx] - pulse["Total Time"].iloc[0])
             
     return tau
-
+"""
+    
 def extract_pulse(cell, test):
     '''
     Parameters: cell (string), test(string) test number "01","09",10", etc..
