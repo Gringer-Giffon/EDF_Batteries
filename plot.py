@@ -252,8 +252,8 @@ def plot_model_voltage_1(cell, test):
 
 def plot_simultaneous_0(cell,test):
     df = dt.calculate_model_voltage_0(cell, test)
-    plt.plot(df["Total Time"], df["Voltage"], "b")
-    plt.plot(df["Total Time"], df["Model Voltage 0"], "g")
+    plt.plot(df["Total Time"], df["Voltage"], "bx")
+    plt.plot(df["Total Time"], df["Model Voltage 0"], "gx")
     plt.legend(["Data","Model Voltage 0"])
     plt.show()
 
@@ -264,16 +264,16 @@ def plot_simultaneous(cell, test):
     Simultaneously plot measured, order 0 and order 1 voltage on subplots
     '''
     df = dt.calculate_model_voltage_1(cell, test)
-    plt.plot(df["Total Time"], df["Voltage"], "b")
-    plt.plot(df["Total Time"], df["Model Voltage 0"], "g")
-    plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
+    plt.plot(df["Total Time"], df["Voltage"], "bx")
+    plt.plot(df["Total Time"], df["Model Voltage 0"], "gx")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "rx")
 
     plt.show()
 
 def plot_simultaneous_1(cell,test):
     df = dt.calculate_model_voltage_1(cell, test)
-    plt.plot(df["Total Time"], df["Voltage"], "b")
-    plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
+    plt.plot(df["Total Time"], df["Voltage"], "bx")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "rx")
     plt.legend(["Data","Model Voltage 1"])
 
 

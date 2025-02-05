@@ -71,6 +71,36 @@ def measure_R0(pulse_df):
             R0.append(0)
     return R0
 
+def measure_tau(pulse_df):
+    spikes = []
+    for pulse in pulse_df:
+        voltage_diff = np.diff(pulse["Voltage"].values)
+
+        # threshold for detection
+        threshold = 0.05
+
+        # index of spike
+        spikes.append(np.argmax(np.abs(voltage_diff) > threshold))
+    tau = []
+
+    for i in range(len(pulse_df)):
+        pulse = pulse_df[i]
+        spike_in = spikes[i]
+        if pulse["Current"].iloc[spike_in] >0:
+            factor = 0.37
+            volt_1 = pulse["Voltage"][pulse["Voltage"] == min["Voltage"]]
+            target_voltage = pulse["Voltage"].iloc[spike_in+1] - factor * \
+        abs(max(pulse["Voltage"]-min(pulse["Voltage"])))
+        else:
+            factor = 0.37
+        target_voltage = pulse["Voltage"].iloc[spike_in+1] - factor * \
+        abs(pulse["Voltage"].iloc[spike_in+1]-min(pulse["Voltage"]))
+            
+        idx = (pulse["Voltage"] - target_voltage).abs().idxmin()
+
+        tau.append(pulse["Total Time"].loc[idx] - pulse["Total Time"].iloc[0])
+            
+    return tau
 
 def extract_pulse(cell, test):
     '''
@@ -262,7 +292,7 @@ if __name__ == "__main__":
     # model_pulse()
     pulses = extract_pulses("C", "01")
 
-    print(measure_R0(pulses))
+    print(measure_tau(pulses))
 
     # model_pulses()
 

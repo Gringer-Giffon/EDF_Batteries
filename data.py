@@ -237,7 +237,7 @@ def soc_ocv_fitted(cell, test):
 
     # Fit a polynomial of degree 4
     # 4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
-    coefficients = np.polyfit(soc, ocv, 5)
+    coefficients = np.polyfit(soc, ocv, 7)
     polynomial = np.poly1d(coefficients)
 
     # Generate fitted values for plotting
@@ -417,7 +417,7 @@ def soc_R1_fitted(cell, test):
 
     # Fit a polynomial of degree 4
     # 5 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
-    coefficients = np.polyfit(soc, R1, 6)
+    coefficients = np.polyfit(soc, R1, 7)
     polynomial = np.poly1d(coefficients)
 
     # plt.plot(soc,R1,"b")
@@ -691,6 +691,7 @@ def time_pulses_calc(df):
     time_list = []
     time_list.append(time)
     for i in range(len(df)-1):
+        #if abs(df['Current'][i] - df['Current'][i+1])/(df['Total Time'][i+1] - df['Total Time'][i]) >= threashold:
         if abs(df['Current'][i] - df['Current'][i+1]) >= threashold:
             time = 0
         time += df['Total Time'][i+1] - df['Total Time'][i]
