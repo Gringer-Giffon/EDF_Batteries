@@ -182,9 +182,9 @@ def find_OCV(cell, test):
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = extract(cell, test)[extract(cell, test)["Current"] == 0]
-    #data_no_dupes = data.loc[~(
-        #data["Total Time"].diff().abs() < time_between_dupes)]
-    return data
+    data_no_dupes = data.loc[~(
+        data["Total Time"].diff().abs() < time_between_dupes)]
+    return data_no_dupes
 
 
 def soc_ocv(cell, test):
