@@ -300,3 +300,84 @@ def plot_soc_tau_r1(cell,test):
     print("df1",df)
     return df
     """
+
+def soc_R0(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
+
+    Plots OCV as a function of SoC for certain measure points
+    Returns a dataframe containing initial data with SoC and OCV
+    '''
+
+    # Dataframe of initial data with SoC
+    df_pre = pd.DataFrame(data={"Total Time": extract(cell, test)[
+                          "Total Time"], "SoC": soc(str(cell), str(test))})
+
+    # Extracting data for measurable OCVs
+    #col1 = find_OCV(str(cell), str(test))["Total Time"]
+    #col2 = find_OCV(str(cell), str(test))["Current"]
+    #col3 = find_OCV(str(cell), str(test))["Voltage"]
+
+    col1 = [pulse["Total Time"].iloc[1] for pulse in et.extract_pulses(cell,test)]
+    col2 = [pulse["Current"].iloc[1] for pulse in et.extract_pulses(cell,test)]
+    col3 = et.measure_R0(et.extract_pulses(cell,test))
+
+    print(len(col1),len(col2),len(col3))
+
+    # Selecting respective SoCs for measured OCV points
+    if cell == "C":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
+    elif cell == "D":
+        col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
+                if i in df_pre["Total Time"].values else np.nan for i in col1]
+    else:
+        print("Invalid cell")
+        return None
+
+    # New dataframe with OCV and SoC
+    d = {"Total Time": col1, "Current": col2, "R0": col3, "SoC": col4}
+    print(len(col1),len(col2),len(col3))
+    df = pd.DataFrame(data=d)
+
+    return df
+
+
+def soc_R0_fitted(cell, test):
+    '''
+    Parameters: cell (string), test (string)
+
+    Returns fitted polynomial between SoC and OCV
+    '''
+    soc = soc_R0(cell, test)["SoC"]
+    R0 = soc_R0(cell, test)["R0"]
+
+    # Fit a polynomial of degree 4
+    # 4 is original, 6 is best, 12 is good CAREFUL WITH OVERFITTING
+    coefficients = np.polyfit(soc, R0, 5)
+    polynomial = np.poly1d(coefficients)
+
+    # Generate fitted values for plotting
+    # ocv_range = np.linspace(min(ocv), max(ocv), 100)
+    # fitted_soc = polynomial(ocv)
+
+    return polynomial
+
+
+def calculate_R0(soc, cell, test):
+    '''
+    Parameters: soc (list) soc values, cell (string), test (string)
+
+    Returns list of calculated OCV values using the polynomial relation between OCV and SoC
+    '''
+
+    coefficients = soc_R0_fitted(cell, test)
+    # print([deg4_model(soc,coefficients[0],coefficients[1],coefficients[2],coefficients[3],coefficients[4]) for soc in soc])
+
+    '''
+    print(pt.soc_ocv(cell, test)["SoC"])
+    plt.plot()
+    '''
+    poly = soc_R0_fitted(cell, test)
+    return [poly(soc) for soc in soc]
+    # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for  soc in soc]

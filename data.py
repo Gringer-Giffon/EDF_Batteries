@@ -209,8 +209,6 @@ def soc_ocv(cell, test):
     col2 = [pulse["Current"].iloc[1] for pulse in et.extract_pulses(cell,test)]
     col3 = et.measure_OCV(et.extract_pulses(cell,test))
 
-    print(len(col1),len(col2),len(col3))
-
     # Selecting respective SoCs for measured OCV points
     if cell == "C":
         col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0]
@@ -287,9 +285,6 @@ def add_ocv(cell, test):
 
 
 # -------------------------------------------------------R0--------------------------------------------------------------------
-def measure_R0(cell,test):
-    R0 = et.measure_OCV(et.extract_pulses(cell,test))
-
 def add_R0(cell, test):
     '''
     Parameters: test (int) test number
@@ -308,20 +303,20 @@ def add_R0(cell, test):
     
 
 
-    R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
-          for i in range(len(df["Current"]))]
+    #R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
+          #for i in range(len(df["Current"]))]
 
     #rz.R0_fill(dfc)
     # print(df, '\n')
     # R0 = dfc[int(test)]["R0"]  # complete R0 column for given test
 
     # df["SoC"] = soc("C", test)
-    df["R0"] = R0
-    R0_no_dupes = df.loc[~(
-        df["Total Time"].diff().abs() < time_between_dupes)] #added this
-    df["R0"] = R0_no_dupes
+    #df["R0"] = calculate_ocv(df["SoC"],cell,test)
+    #R0_no_dupes = df.loc[~(
+        #df["Total Time"].diff().abs() < time_between_dupes)] #added this
+    #df["R0"] = R0_no_dupes
     
-    #df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
+    df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
 
     # rz.R0_replace(df)
     # print(df, '\n')
