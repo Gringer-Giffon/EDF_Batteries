@@ -2,28 +2,19 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import plot as pt
+import data as dt
+import OCV_fit
 
+cell = "D"
+test = "08"
 
-# Generate some data
-#x_data = np.linspace(0, 10, 50)
+pt.plot_soc_ocv(cell, test)
+SoH = dt.soh(cell, test)
 
-#y_data = 2.5 * x_data + 1.0 + np.random.normal(0, 1, 50)
+df = dt.soc_ocv(cell, test)
+OCV_estimated = [OCV_fit.f(soc,SoH) for soc in df["SoC"]]
 
-pt.plot_test("D", "09")
+df = df.sort_values(by="SoC", ascending = False)
 
-
-
-"""
-# Fit the model to the data
-params, covariance = curve_fit(linear_model, x_data, y_data)
-
-y_data_check = params[0] * x_data + params[1] 
-
-# Output the parameters
-print("Fitted parameters:", params)
-plt.plot(x_data, y_data, "ro")
-plt.plot(x_data, y_data_check, "b--")
+plt.plot(df["SoC"], OCV_estimated)
 plt.show()
-    """
-    
-
