@@ -182,9 +182,9 @@ def find_OCV(cell, test):
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = extract(cell, test)[extract(cell, test)["Current"] == 0]
-    data_no_dupes = data.loc[~(
-        data["Total Time"].diff().abs() < time_between_dupes)]
-    return data_no_dupes
+    #data_no_dupes = data.loc[~(
+        #data["Total Time"].diff().abs() < time_between_dupes)]
+    return data
 
 
 def soc_ocv(cell, test):
@@ -359,9 +359,9 @@ def find_R1(cell, test):
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = add_ocv(cell, test)[add_ocv(cell, test)["Step"] == step]
-    data_no_dupes = data.loc[~(
-        data["Total Time"].diff().abs() < time_between_dupes)]
-    return data_no_dupes
+    #data_no_dupes = data.loc[~(
+        #data["Total Time"].diff().abs() < time_between_dupes)]
+    return data
 
 
 def measure_r1(cell, test):
@@ -389,7 +389,7 @@ def measure_r1(cell, test):
 
     for split in splits:
         split["R1"] = abs(split["Voltage"].iloc[0] -
-                          split["Voltage"].iloc[-1]) / abs(split["Current"].mean())
+                          split["Voltage"].iloc[-1]) / abs(split["Current"].iloc[-1])
 
     """
     df = splits[0]
@@ -501,15 +501,30 @@ def measure_tau(cell, test):
         print("tau",tau)
         split["tau"] = tau
         """
+        """
+        target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
+        abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
+
+        idx = (df["Voltage"] - target_voltage).abs().idxmin()
+
+        tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
+
+        print(tau)
+        """
+
+        #target_voltage = df["Voltage"].iloc[0] - 0.63*abs(df["Voltage"].iloc[0]-min(df["Voltage"]))
+        
         final_voltage = min(split["Voltage"])
         print("final voltage,", final_voltage)
-        target_voltage = max(split["Voltage"]) - 0.63 * \
-            abs(max(split["Voltage"]-min(split["Voltage"])))
+        target_voltage = split["Voltage"].iloc[0] - 0.63 * \
+            abs(split["Voltage"].iloc[0]-min(split["Voltage"]))
         print("target voltage", target_voltage)
-
+        
         # Find the index where voltage is closest to target
         idx = (split["Voltage"] - target_voltage).abs().idxmin()
 
+        #split["tau"] = (split["Total Time"].loc[idx] - split["Total Time"].iloc[0])
+        
         if idx is not None and idx > 0:
             split["tau"] = split["Total Time"].loc[idx] - \
                 split["Total Time"].iloc[0]
@@ -520,7 +535,7 @@ def measure_tau(cell, test):
 
         print(
             f"Final voltage: {final_voltage}, Target voltage: {target_voltage}, Tau: {split['tau']}")
-
+        
     return pd.concat(splits)
 
 
@@ -687,8 +702,9 @@ def calculate_model_voltage_1(cell, test):
     df = df.merge(df1[["Total Time", "R1", "tau", "C1"]],
                   on="Total Time", how="left")
     print("merged", df)
-
+    
     # Calculate model voltage using vectorized operations
+
     df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] - df["R1"].iloc[i] * \
         abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
         abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
