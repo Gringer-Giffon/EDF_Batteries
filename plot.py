@@ -203,7 +203,6 @@ def plot_soc_ocv(cell, test):
     plt.ylabel("OCV (V)")
     plt.xlabel("SoC (% ratio)")
     plt.title("OCV vs SoC: cell "+cell+" test "+test)
-    plt.show()
     return None
 
 
