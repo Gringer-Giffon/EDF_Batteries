@@ -206,6 +206,17 @@ def plot_soc_ocv(cell, test):
     return None
 
 
+def plot_model_data_soc_ocv(cell, test):
+    
+    plot_soc_ocv(cell, test)
+
+    polynomial = dt.soc_ocv_fitted(cell, test)
+
+    x = np.linspace(0, 1, 100)
+
+    plt.plot(x, polynomial(x), "b-")
+
+
 def plot_model_voltage_0(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test(string) test number
