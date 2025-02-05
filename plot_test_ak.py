@@ -5,16 +5,26 @@ import plot as pt
 import data as dt
 import OCV_fit
 
-cell = "D"
+
+
+cell = "C"
 test = "08"
 
-pt.plot_soc_ocv(cell, test)
-SoH = dt.soh(cell, test)
+def model_data_soc_ocv(cell, test):
+    
+    pt.plot_soc_ocv(cell, test)
 
-df = dt.soc_ocv(cell, test)
-OCV_estimated = [OCV_fit.f(soc,SoH) for soc in df["SoC"]]
+    polynomial = dt.soc_ocv_fitted(cell, test)
 
-df = df.sort_values(by="SoC", ascending = False)
+    x = np.linspace(0, 1, 100)
 
-plt.plot(df["SoC"], OCV_estimated)
+    plt.plot(x, polynomial(x), "b-")
+
+
+model_data_soc_ocv(cell, test)
 plt.show()
+
+        
+            
+    
+
