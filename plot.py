@@ -240,6 +240,12 @@ def plot_model_voltage_1(cell, test):
     plt.subplots_adjust(hspace=1)
     plt.show()
 
+def plot_simultaneous_0(cell,test):
+    df = dt.calculate_model_voltage_0(cell, test)
+    plt.plot(df["Total Time"], df["Voltage"], "b")
+    plt.plot(df["Total Time"], df["Model Voltage 0"], "g")
+    plt.legend(["Data","Model Voltage 0"])
+    plt.show()
 
 def plot_simultaneous(cell, test):
     '''
@@ -253,6 +259,12 @@ def plot_simultaneous(cell, test):
     plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
 
     plt.show()
+
+def plot_simultaneous_1(cell,test):
+    df = dt.calculate_model_voltage_1(cell, test)
+    plt.plot(df["Total Time"], df["Voltage"], "b")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
+    plt.legend(["Data","Model Voltage 1"])
 
 
 def plot_r0_soc(cell, test):
@@ -310,17 +322,19 @@ def plot_c1_soc(cell,test):
 
 if __name__ == '__main__':
     # plot_simultaneous("C","01")
-    plot_test("C", "01")  # 7-9
-    plot_test("D", "01")  # bigger than 6 to 7
+    #plot_test("C", "01")  # 7-9
+    #plot_test("D", "01")  # bigger than 6 to 7
 
     #plot_r0_soc("C","01")
     #plot_r1_soc("D","01")
-    plot_c1_soc("C","01")
+    #plot_c1_soc("C","01")
     #plot_tau_soc("C","01")
 
 
-    plot_simultaneous("D", "01")
-    plot_simultaneous("C", "01")
+    #plot_simultaneous("D", "01")
+    #plot_simultaneous("C", "01")
+
+    plot_simultaneous_1("C","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")

@@ -182,9 +182,9 @@ def find_OCV(cell, test):
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = extract(cell, test)[extract(cell, test)["Current"] == 0]
-    data_no_dupes = data.loc[~(
-        data["Total Time"].diff().abs() < time_between_dupes)]
-    return data_no_dupes
+    #data_no_dupes = data.loc[~(
+        #data["Total Time"].diff().abs() < time_between_dupes)]
+    return data
 
 
 def soc_ocv(cell, test):
@@ -275,7 +275,7 @@ def add_ocv(cell, test):
     Returns dataframe containing OCV
     '''
 
-    df = add_R0(cell, test)  # Data fram with R0
+    df = add_R0(cell, test)  # Data frame with R0
     df["OCV"] = calculate_ocv(df["SoC"], cell, test)
     return df
 
@@ -290,11 +290,13 @@ def add_R0(cell, test):
     '''
     global soh_value
 
+    
     time_between_dupes = 300  # added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
+    """
     # df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
-    '''
+    
     R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
@@ -307,7 +309,7 @@ def add_R0(cell, test):
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
     #df["R0"] = R0_no_dupes
-    '''
+    """
     df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
 
     # rz.R0_replace(df)
@@ -357,9 +359,9 @@ def find_R1(cell, test):
         print("Invalid cell entry. Cell entry must be C or D")
         return None
     data = add_ocv(cell, test)[add_ocv(cell, test)["Step"] == step]
-    data_no_dupes = data.loc[~(
-        data["Total Time"].diff().abs() < time_between_dupes)]
-    return data_no_dupes
+    #data_no_dupes = data.loc[~(
+        #data["Total Time"].diff().abs() < time_between_dupes)]
+    return data
 
 
 def measure_r1(cell, test):
@@ -387,7 +389,7 @@ def measure_r1(cell, test):
 
     for split in splits:
         split["R1"] = abs(split["Voltage"].iloc[0] -
-                          split["Voltage"].iloc[-1]) / abs(split["Current"].mean())
+                          split["Voltage"].iloc[-1]) / abs(split["Current"].iloc[-1])
 
     """
     df = splits[0]
@@ -499,15 +501,30 @@ def measure_tau(cell, test):
         print("tau",tau)
         split["tau"] = tau
         """
+        """
+        target_voltage = df["Voltage"].iloc[spike+1] - 0.63 * \
+        abs(df["Voltage"].iloc[spike+1]-min(df["Voltage"]))
+
+        idx = (df["Voltage"] - target_voltage).abs().idxmin()
+
+        tau = (df["Total Time"].loc[idx] - df["Total Time"].iloc[0])
+
+        print(tau)
+        """
+
+        #target_voltage = df["Voltage"].iloc[0] - 0.63*abs(df["Voltage"].iloc[0]-min(df["Voltage"]))
+        
         final_voltage = min(split["Voltage"])
         print("final voltage,", final_voltage)
-        target_voltage = max(split["Voltage"]) - 0.63 * \
-            abs(max(split["Voltage"]-min(split["Voltage"])))
+        target_voltage = split["Voltage"].iloc[0] - 0.63 * \
+            abs(split["Voltage"].iloc[0]-min(split["Voltage"]))
         print("target voltage", target_voltage)
-
+        
         # Find the index where voltage is closest to target
         idx = (split["Voltage"] - target_voltage).abs().idxmin()
 
+        #split["tau"] = (split["Total Time"].loc[idx] - split["Total Time"].iloc[0])
+        
         if idx is not None and idx > 0:
             split["tau"] = split["Total Time"].loc[idx] - \
                 split["Total Time"].iloc[0]
@@ -518,7 +535,7 @@ def measure_tau(cell, test):
 
         print(
             f"Final voltage: {final_voltage}, Target voltage: {target_voltage}, Tau: {split['tau']}")
-
+        
     return pd.concat(splits)
 
 
@@ -662,6 +679,19 @@ def add_c1(cell, test):
     print("add c1", df)
     return df
 
+def time_pulses_calc(df):
+    threashold = 10
+    time = df['Total Time'][0]
+    time_list = []
+    time_list.append(time)
+    for i in range(len(df)-1):
+        if abs(df['Current'][i] - df['Current'][i+1]) >= threashold:
+            time = 0
+        time += df['Total Time'][i+1] - df['Total Time'][i]
+        time_list.append(time)
+    df['Time'] = time_list
+    return df
+
 
 # -----------------------------------------------------MODEL 1------------------------------------------------------------
 
@@ -685,11 +715,12 @@ def calculate_model_voltage_1(cell, test):
     df = df.merge(df1[["Total Time", "R1", "tau", "C1"]],
                   on="Total Time", how="left")
     print("merged", df)
-
+    
     # Calculate model voltage using vectorized operations
+    df = time_pulses_calc(df)
     df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] - df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
 
     print(df["R1"] * df1["Current"] *
           (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))
@@ -702,8 +733,17 @@ def calculate_model_voltage_1(cell, test):
 
     return df
 
+"""
+def table_soc(cell,test):
+    df = soc_ocv(cell,test)
+    df1 = add_R0(cell,test)
+    df = df.merge(df1[["Total Time", "R0"]],
+                  on="Total Time", how="left")
+    return df
+"""
 
 if __name__ == "__main__":
+    #print(table_soc("C","01"))
     # print(soc("C","01"))
     """
     plot_r_soc("C","01")
@@ -722,7 +762,8 @@ if __name__ == "__main__":
     # ocv = add_ocv("D","01")
 
     # print(measure_tau("D","08"))
-    print(calculate_model_voltage_1("C", "01"))
+    #print(calculate_model_voltage_1("C", "01"))
+    
 
     """
     df = measure_r1("C","01")
