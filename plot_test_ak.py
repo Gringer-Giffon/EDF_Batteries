@@ -18,40 +18,12 @@ def model_data_soc_ocv(cell, test):
 
     x = np.linspace(0, 1, 100)
 
-    plt.plot(x, polynomial(x), "r--")
+    plt.plot(x, polynomial(x), "b-")
 
-"""
+
 model_data_soc_ocv(cell, test)
 plt.show()
-"""
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-def plot_soc_var(cell, test, var):
-    if var == "R0":
-        dt.add_R0(cell, test)
-    elif var == "OCV":
-        dt.plot_soc_ocv(cell, test)
-        
-plot_soc_var(cell, test, "R0")
-plt.show()
-
-
-def model_data_soc_var(cell, test, var):
-    
-    plot_soc_var(cell, test, var)
-    
         
             
     
