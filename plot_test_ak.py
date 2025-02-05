@@ -7,12 +7,12 @@ import OCV_fit
 
 
 
-cell = "C"
-test = "08"
+cell = "D"
+test = "0"
 
 def model_data_soc_ocv(cell, test):
     
-    pt.plot_soc_ocv(cell, test)
+    pt.plot_socx_ocv(cell, test)
 
     polynomial = dt.soc_ocv_fitted(cell, test)
 

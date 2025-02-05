@@ -1,75 +1,102 @@
-import numpy as np
+import os
+import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+import numpy as np
 import plot as pt
 
-# Load data
-ocv_values = np.array(pt.soc_ocv("C", "06")["OCV"])  # OCV values
-soc_values = np.array(pt.soc_ocv("C", "06")["SoC"])  # SoC values
+# -----------------------------------------------VARIABLES--------------------------------------------------------
 
-# Ensure data is clean (remove NaNs, sort for better fitting)
-ocv_values = np.nan_to_num(ocv_values)
-soc_values = np.nan_to_num(soc_values)
+folderPath = f'./cells_data'
 
-# Define polynomial model
-def dynamic_poly_model(x, *coeffs):
-    return sum(c * x**i for i, c in enumerate(coeffs))
+csv_files = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
 
-# Fitting parameters
-target_error = 0.0001
-max_order = 5
-max_attempts = 10
-order = 1  
-error = float('inf')
-fitted_params = None
+csvFiles_C = [f for f in csv_files if '_C_' in f]
+csvFiles_D = [f for f in csv_files if '_D_' in f]
 
-# Fitting loop
-for attempt in range(max_attempts):
-    if order > max_order:  
-        print(f"Reached max polynomial order {max_order}, stopping.")
-        break
+dfc = [pd.read_csv(os.path.join(folderPath, file))
+       for file in csvFiles_C]      # Dataframes for Cell C
+dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
 
-    # Generate initial guess (fallback to simple ones if polyfit fails)
-    try:
-        initial_guess = np.polyfit(ocv_values, soc_values, order)
-    except Exception:
-        initial_guess = np.ones(order + 1)  # Default to ones
+# -----------------------------------------------FUNCTIONS--------------------------------------------------------
 
-    # Curve fitting
-    try:
-        fitted_params, _ = curve_fit(dynamic_poly_model, ocv_values, soc_values, p0=initial_guess)
+def plot_voltage(df):
+    """Plots the full voltage response over time."""
+    #plot_data = dt.extract(cell, test)
 
-        if fitted_params is not None:  
-            soc_pred = dynamic_poly_model(ocv_values, *fitted_params)
-            error = np.mean((soc_values - soc_pred) ** 2)
+    time = df["Total Time"]
+    voltage = df["Voltage"]
 
-            print(f"Attempt: {attempt + 1}, Order: {order}")
-            print(f"Coefficients: {fitted_params}")
-            print(f"Error: {error:.6f}\n")
-
-            if error <= target_error:
-                print(f"Target error reached at order {order}!\n")
-                break
-    except Exception as e:
-        print(f"Curve fitting failed at order {order}: {e}")
-
-    order += 1  # Increase polynomial order for next attempt
-
-# Ensure `fitted_params` is valid before plotting
-if fitted_params is not None:
-    # Generate smooth curve for plotting
-    ocv_smooth = np.linspace(min(ocv_values), max(ocv_values), 500)
-    soc_pred_smooth = dynamic_poly_model(ocv_smooth, *fitted_params)
-
-    # Plot results
-    plt.figure(figsize=(10, 6))
-    plt.scatter(ocv_values, soc_values, label="Data Points", marker="+", color="gray", alpha=0.6)
-    plt.plot(ocv_smooth, soc_pred_smooth, color='red', linewidth=2, label=f'Fitted Curve (Order {order})')
-    plt.xlabel('OCV')
-    plt.ylabel('SOC')
-    plt.title('SoC vs. OCV with Polynomial Curve Fitting')
+    plt.figure(figsize=(10, 5))
+    plt.plot(time, voltage, label="Voltage Response", color="b")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Voltage (V)")
+    plt.title("Full Voltage Response")
     plt.legend()
     plt.grid(True)
     plt.show()
-else:
-    print(" Curve fitting completely failed. No plot generated.")
+
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_pulse(df, time_buffer=50):
+    """Finds a pulse using current spikes (~+32 to ~-32) and plots voltage over that pulse duration with extra buffer."""
+    time = df["Total Time"].values
+    voltage = df["Voltage"].values
+    current = df["Current"].values  
+
+    # Define a tolerance range for current detection
+    tol = 2
+    current_high = np.where((current >= 32 - tol) & (current <= 32 + tol))[0]
+    current_low = np.where((current >= -32 - tol) & (current <= -32 + tol))[0]
+
+    if len(current_high) == 0 or len(current_low) == 0:
+        print("No pulse found. Check current values and tolerance.")
+        return
+
+    # Identify first +32 and next -32
+    pulse_start = current_high[0]
+    pulse_end_candidates = current_low[current_low > pulse_start]
+
+    if len(pulse_end_candidates) == 0:
+        print("No valid pulse end found. Check data sequence.")
+        return
+
+    pulse_end = pulse_end_candidates[0]
+
+    # Convert buffer to indices
+    t_start = max(0, time[pulse_start] - time_buffer)  # Ensure we don’t go below index 0
+    t_end = min(time[-1], time[pulse_end] + time_buffer)  # Ensure we don’t exceed max time
+
+    # Find indices closest to t_start and t_end
+    start_idx = np.searchsorted(time, t_start)
+    end_idx = np.searchsorted(time, t_end)
+
+    # Extract pulse time and voltage with buffer
+    time_pulse = time[start_idx:end_idx]
+    voltage_pulse = voltage[start_idx:end_idx]
+
+    if len(time_pulse) == 0 or len(voltage_pulse) == 0:
+        print("Pulse extraction failed. Check index selection.")
+        return
+
+    # Plot the pulse with buffer
+    plt.figure(figsize=(10, 5))
+    plt.plot(time_pulse, voltage_pulse, label="Voltage Pulse", color="r")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Voltage (V)")
+    plt.title("Single Voltage Pulse with Time Buffer")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    print(f"Pulse detected from t={time_pulse[0]:.3f}s to t={time_pulse[-1]:.3f}s with buffer={time_buffer}s")
+
+# -----------------------------------------------CALLING FUNCTIONS--------------------------------------------------------
+
+#pt.plot_test("D","00")
+
+#print(dfc[0].columns)  # Ensure "Current" column exists
+#print(np.unique(dfd[0]["Current"]))  # Check unique current values
+plot_pulse(dfc[0])  # Call function on first dataset
