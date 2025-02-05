@@ -83,7 +83,7 @@ def model_pulse():
     spike = spike_index(df)
     U_ocv = df["Voltage"].iloc[spike]
 
-    R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1])
+    R0 = abs(U_ocv - df["Voltage"].iloc[spike+1])/abs(df["Current"].iloc[spike+1]) #!!!!!!!
     print("R0", R0)
 
     model_voltage_0 = [
@@ -98,6 +98,12 @@ def model_pulse():
     plt.plot(df["Total Time"], df["Voltage"], 'r')
 
     # 1st order non fitted
+    #R0 = 0.5*(R0+abs(min(df["Voltage"])-max(df["Voltage"]))/abs(df["Current"].iloc[spike+1]))
+    #model_voltage_0 = [
+    #U_ocv + R0 * abs(df["Current"].iloc[i]) if df["Current"].iloc[i] > 0
+    #else U_ocv - R0 * abs(df["Current"].iloc[i])
+    #for i in range(len(df))
+#]
     R1 = abs(df["Voltage"].iloc[spike+1] - min(df["Voltage"])) / \
         abs(df["Current"][df["Voltage"] == min(df["Voltage"])]).iloc[0]
     print("R1", R1)
