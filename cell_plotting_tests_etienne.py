@@ -13,6 +13,51 @@ import math
 # plt.plot(dt.extract("D", "01")["Total Time"],dt.extract("D", "01")["Voltage"], "x")
 # plt.show()
 
+def extract_pulses(cell,test):
+    df_pre = dt.extract(cell,test)
+    pulse_df= []
+    df = df_pre[abs(df_pre["Current"]).between(max(df_pre["Current"])-1,max(df_pre["Current"]+1))] # Selects all pulse indexes
+    df = df[df.index.to_series().diff().gt(1)]
+    for pulse_time in df["Total Time"]:
+        if cell == "C":
+            pulse_df.append(df_pre[(df_pre["Total Time"] >= pulse_time -20) & (df_pre["Total Time"] <= pulse_time + 15)])
+        elif cell == "D":
+            pulse_df.append(df_pre[(df_pre["Total Time"] >= pulse_time -200) & (df_pre["Total Time"] <= pulse_time + 150)])
+        else:
+            print("Invalid choice of cell")
+            return None
+    return pulse_df
+
+def measure_OCV(pulse_df):
+    spikes = []
+    for pulse in pulse_df:
+        voltage_diff = np.diff(pulse["Voltage"].values)
+
+        # threshold for detection
+        threshold = 0.05  
+
+        # index of spike
+        spikes.append(np.argmax(np.abs(voltage_diff) > threshold))
+    ocv = []
+    for i in range(len(pulse_df)):
+        ocv.append(pulse_df[i]["Voltage"].iloc[spikes[i]])
+    return ocv
+
+def measure_R0(pulse_df):
+    spikes = []
+    for pulse in pulse_df:
+        voltage_diff = np.diff(pulse["Voltage"].values)
+
+        # threshold for detection
+        threshold = 0.05  
+
+        # index of spike
+        spikes.append(np.argmax(np.abs(voltage_diff) > threshold))
+    R0 = []
+    for i in range(len(pulse_df)):
+        R0.append((pulse_df[i]["Voltage"].iloc[spikes[i]])
+
+
 def extract_pulse(cell,test):
     '''
     Parameters: cell (string), test(string) test number "01","09",10", etc..
@@ -190,7 +235,10 @@ def model_pulses():
 
 
 if __name__ == "__main__":
-    model_pulse()
+    #model_pulse()
+    pulses = extract_pulses("C","01")
+
+    print(measure_OCV(pulses))
     
     #model_pulses()   
 

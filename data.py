@@ -11,6 +11,7 @@ import math
 import R0_fit
 import OCV_fit
 from scipy.optimize import curve_fit
+import cell_plotting_tests_etienne as et
 
 
 folderPath = f'./cells_data'
@@ -200,9 +201,15 @@ def soc_ocv(cell, test):
                           "Total Time"], "SoC": soc(str(cell), str(test))})
 
     # Extracting data for measurable OCVs
-    col1 = find_OCV(str(cell), str(test))["Total Time"]
-    col2 = find_OCV(str(cell), str(test))["Current"]
-    col3 = find_OCV(str(cell), str(test))["Voltage"]
+    #col1 = find_OCV(str(cell), str(test))["Total Time"]
+    #col2 = find_OCV(str(cell), str(test))["Current"]
+    #col3 = find_OCV(str(cell), str(test))["Voltage"]
+
+    col1 = [pulse["Total Time"].iloc[1] for pulse in et.extract_pulses(cell,test)]
+    col2 = [pulse["Current"].iloc[1] for pulse in et.extract_pulses(cell,test)]
+    col3 = et.measure_OCV(et.extract_pulses(cell,test))
+
+    print(len(col1),len(col2),len(col3))
 
     # Selecting respective SoCs for measured OCV points
     if cell == "C":
@@ -242,7 +249,6 @@ def soc_ocv_fitted(cell, test):
     return polynomial
 
 
-"""
 def calculate_ocv(soc, cell, test):
     '''
     Parameters: soc (list) soc values, cell (string), test (string)
@@ -260,13 +266,13 @@ def calculate_ocv(soc, cell, test):
     poly = soc_ocv_fitted(cell, test)
     return [poly(soc) for soc in soc]
     # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for soc in soc]
+
+
 """
-
-
 def calculate_ocv(soc, cell, test):
     global soh_value
     return [OCV_fit.f(soc_val, soh_value) for soc_val in soc]
-
+"""
 
 def add_ocv(cell, test):
     '''
@@ -281,6 +287,9 @@ def add_ocv(cell, test):
 
 
 # -------------------------------------------------------R0--------------------------------------------------------------------
+def measure_R0(cell,test):
+    R0 = et.measure_OCV(et.extract_pulses(cell,test))
+
 def add_R0(cell, test):
     '''
     Parameters: test (int) test number
@@ -294,9 +303,11 @@ def add_R0(cell, test):
     time_between_dupes = 300  # added this
     df = extract(cell, test)
     df["SoC"] = soc(cell, test)
-    """
+    
     # df["OCV"] = calculate_ocv(soc(cell, test), cell, test)
     
+
+
     R0 = [(abs(df["OCV"].iloc[i] - df["Voltage"].iloc[i]) / abs(df["Current"].iloc[i]) if abs(df["Current"].iloc[i]) > 1 else 0)
           for i in range(len(df["Current"]))]
 
@@ -308,9 +319,9 @@ def add_R0(cell, test):
     df["R0"] = R0
     R0_no_dupes = df.loc[~(
         df["Total Time"].diff().abs() < time_between_dupes)] #added this
-    #df["R0"] = R0_no_dupes
-    """
-    df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
+    df["R0"] = R0_no_dupes
+    
+    #df["R0"] = [R0_fit.f(soc_value, soh_value) for soc_value in df["SoC"]]
 
     # rz.R0_replace(df)
     # print(df, '\n')
@@ -743,6 +754,7 @@ def table_soc(cell,test):
 """
 
 if __name__ == "__main__":
+    
     #print(table_soc("C","01"))
     # print(soc("C","01"))
     """
