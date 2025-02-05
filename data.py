@@ -679,6 +679,19 @@ def add_c1(cell, test):
     print("add c1", df)
     return df
 
+def time_pulses_calc(df):
+    threashold = 10
+    time = df['Total Time'][0]
+    time_list = []
+    time_list.append(time)
+    for i in range(len(df)-1):
+        if abs(df['Current'][i] - df['Current'][i+1]) >= threashold:
+            time = 0
+        time += df['Total Time'][i+1] - df['Total Time'][i]
+        time_list.append(time)
+    df['Time'] = time_list
+    return df
+
 
 # -----------------------------------------------------MODEL 1------------------------------------------------------------
 
@@ -704,10 +717,10 @@ def calculate_model_voltage_1(cell, test):
     print("merged", df)
     
     # Calculate model voltage using vectorized operations
-
+    df = time_pulses_calc(df)
     df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] - df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Total Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
+        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
 
     print(df["R1"] * df1["Current"] *
           (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))
