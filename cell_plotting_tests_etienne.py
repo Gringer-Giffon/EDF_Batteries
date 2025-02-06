@@ -293,7 +293,7 @@ if __name__ == "__main__":
     # model_pulse()
     #pulses = extract_pulses("C", "01")
 
-
+    print(dt.add_R0("C","09"))
     pt.plot_soc_ocv("D","00")
     pt.plot_soc_ocv("D","05")
     pt.plot_soc_ocv("D","11")

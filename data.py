@@ -153,11 +153,8 @@ def soh(cell, test):
     Calculates the state of health of a cell at a given time 
     Returns SOH value of test
     '''
-    print("I am in the SOH function")
     Q_remaining = q_remaining(cell, test)
-    print("I have Q remaining")
     q_init = q_remaining(cell, "00")
-    print("I have q initial")
     SOH = Q_remaining / q_init
     # print(Q_remaining, q_init)
     return SOH
@@ -296,7 +293,7 @@ def add_R0(cell, test):
     Returns dataframe with original data and SoC and R0
 
     '''
-    global soh_value
+    #global soh_value
     soh_value = soh(cell, test)
 
     time_between_dupes = 300  # added this
