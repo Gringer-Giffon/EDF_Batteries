@@ -457,6 +457,7 @@ def plot_simultaneous(cell, test):
 
 
 def plot_simultaneous_1(cell, test):
+    
     df = dt.calculate_model_voltage_1(cell, test)
     plt.plot(df["Total Time"], df["Voltage"], "b")
     plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
@@ -465,6 +466,8 @@ def plot_simultaneous_1(cell, test):
     plt.ylabel("Voltage (V)")
     plt.title("Measured vs. 1st-Order Model Voltage")
     plt.legend(["Data", "Model Voltage 1"])
+    plt.show()
+    
 
 
 def plot_r0_soc(cell, test):

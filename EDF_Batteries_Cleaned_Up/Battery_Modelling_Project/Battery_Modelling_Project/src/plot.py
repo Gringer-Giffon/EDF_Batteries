@@ -5,8 +5,10 @@ import os
 from scipy.integrate import cumulative_trapezoid
 import data as dt
 from mpl_toolkits.mplot3d import Axes3D
-import R0_fit as r_calc
-import OCV_fit as v_calc
+import zeroth_order_modules as zom
+import first_order_modules as fom
+
+pd.options.mode.chained_assignment = None  # Suppress SettingWithCopyWarning
 
 # ------------------------------------------------ PLOTTING CONFIGURATION ------------------------------------------------ #
 plt.rcParams['font.family'] = 'serif'
@@ -15,7 +17,7 @@ plt.rcParams['axes.labelcolor'] = 'darkred'  # Axis label color
 plt.rcParams['axes.prop_cycle'] = plt.cycler('color', ['darkred'])
 
 # ------------------------------------------------ DIRECTORY & FILE EXTRACTION ------------------------------------------------ #
-directory = "./cells_data"
+directory = zom.data_file_path
 centrale_red = "#AF4458"  # Custom color for plots
 
 # Extracts all CSV file names in the directory
@@ -292,7 +294,7 @@ def plot_model_data_soc_ocv(cell, test):
 def model_data_r0_soc_soh():
     
     cell = "C"
-    f_vectorized = np.vectorize(r_calc.f)
+    f_vectorized = np.vectorize(zom.f)
     
     x = np.linspace(0, 1, 100)
     y = np.linspace(0.9, 1, 100)
@@ -315,10 +317,64 @@ def model_data_r0_soc_soh():
     plt.show()
 
 
+def model_data_r1_soc_soh():
+    
+    cell = "C"
+    f_vectorized = np.vectorize(fom.g_1)
+    
+    x = np.linspace(0, 0.8, 100)
+    y = np.linspace(0.92, 1, 100)
+    x, y = np.meshgrid(x, y)
+    z = f_vectorized(x, y, cell=f'Cell {cell}')
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Use plot_surface instead of scatter
+    ax.plot_surface(x, y, z, cmap='viridis', edgecolor='none')
+
+    ax.set_xlabel('SoC Value')
+    ax.set_ylabel('SoH Value')
+    ax.set_zlabel('Resistance One (Ohm)')
+    ax.set_title('SoC and SoH Effects on C1 of cell ' + cell)
+
+    ax.view_init(elev=20, azim=60)
+
+    plt.show()
+     
+
+def model_data_c1_soc_soh():
+    
+    cell = "C"
+    f_vectorized = np.vectorize(fom.h_1)
+    
+    x = np.linspace(0, 0.8, 100)
+    y = np.linspace(0.92, 1, 100)
+    x, y = np.meshgrid(x, y)
+    z = f_vectorized(x, y, cell=f'Cell {cell}')
+
+    z = np.where(z < 100, 100, z)
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Use plot_surface instead of scatter
+    ax.plot_surface(x, y, z, cmap='viridis', edgecolor='none')
+
+    ax.set_xlabel('SoC Value')
+    ax.set_ylabel('SoH Value')
+    ax.set_zlabel('Resistance One (Ohm)')
+    ax.set_title('SoC and SoH Effects on C1 of cell ' + cell)
+
+    ax.view_init(elev=20, azim=60)
+
+    plt.show()
+
+
 def model_data_ocv_soc_soh():
     cell = "C"
     
-    f_vectorized = np.vectorize(v_calc.f)
+    f_vectorized = np.vectorize(f)
     
     x = np.linspace(0,1,30)
     y = np.linspace(0.9,1,30)
@@ -446,7 +502,12 @@ def plot_simultaneous_1(cell,test):
     df = dt.calculate_model_voltage_1(cell, test)
     plt.plot(df["Total Time"], df["Voltage"], "b")
     plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
+            
+    plt.xlabel("Time (s)")
+    plt.ylabel("Voltage (V)")
+    plt.title("Measured vs. 1st-Order Model Voltage")
     plt.legend(["Data","Model Voltage 1"])
+    
 
 
 def plot_r0_soc(cell, test):
@@ -560,3 +621,92 @@ if __name__ == '__main__':
 
     # plt.text(x=0,y=0,s=str(soh("D","00")))
     plt.show()
+
+folderPath = directory
+
+csvFiles = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
+
+csvFiles_C = [f for f in csvFiles if '_C_' in f]
+csvFiles_D = [f for f in csvFiles if '_D_' in f]
+
+dfc = [pd.read_csv(os.path.join(folderPath, file))
+       for file in csvFiles_C]      # Dataframes for Cell C
+dfd = [pd.read_csv(os.path.join(folderPath, file)) for file in csvFiles_D]
+
+SoC_matrix = []
+OCV_matrix = []
+SoH_list = []
+'''
+for i in range(24):
+    test = str(i)
+    if len(test) == 1:
+        test = f'0{test}'
+
+    df = dt.soc_ocv('C', test)
+    df = df.sort_values(by='SoC').iloc[:21]
+    SoH = dt.soh('C', test)
+    
+    SoC_matrix.append(df['SoC'])
+    OCV_matrix.append(df['OCV'])
+    SoH_list.append(SoH)
+
+print(min(len(soc) for soc in SoC_matrix))
+    
+print(df)
+
+##############################################################################
+
+X = np.array(SoC_matrix)
+Y = np.array(SoH_list)
+Z = np.array(OCV_matrix)
+
+X_flat = X.flatten()
+Y_flat = np.repeat(Y, 21)
+Z_flat = Z.flatten()
+
+def generate_poly_features(x, y, degree):
+    """Generate polynomial terms up to `degree` for inputs x and y."""
+    features = []
+    for d in range(degree + 1):
+        for i in range(d + 1):
+            x_power = d - i
+            y_power = i
+            features.append((x ** x_power) * (y ** y_power))
+    return np.column_stack(features)
+
+degree = 7  # Example; adjust based on data complexity
+A = generate_poly_features(X_flat, Y_flat, degree)  # Design matrix
+
+coefficients, residuals, _, _ = np.linalg.lstsq(A, Z_flat, rcond=None)
+
+np.save("coefficients_OCV.npy", coefficients)
+'''
+coefficients = np.load(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/OCV_models/coefficients_OCV.npy'))
+degree = 5
+
+
+def f(x, y):
+    global coefficients, degree
+    """Evaluate f(x, y) using the polynomial coefficients.
+    x => SoC  y => SoH
+    """
+    terms = []
+    for d in range(degree + 1):
+        for i in range(d + 1):
+            x_power = d - i
+            y_power = i
+            terms.append((x ** x_power) * (y ** y_power))
+    return np.dot(terms, coefficients)
+
+if __name__ == '__main__':
+    test = '07'
+    df = dt.soc_ocv('C', test)
+    df = df.sort_values(by='SoC')
+    SoH = dt.soh('C', test)
+    
+    OCV = [f(SoC, SoH) for SoC in df['SoC']]
+    df['OCV_Pred'] = OCV
+    plt.plot(df['SoC'], df['OCV_Pred'], 'b')
+    plt.plot(df['SoC'], df['OCV'], 'r')
+    plt.show()
+    

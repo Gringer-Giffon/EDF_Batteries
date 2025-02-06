@@ -3,6 +3,8 @@ import numpy as np
 from scipy.integrate import cumulative_trapezoid
 import os
 
+pd.options.mode.chained_assignment = None  # Suppress SettingWithCopyWarning
+
 data_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/cells_data') # Reaching the datas in the data folder
 folderPath = data_file_path
 
@@ -33,7 +35,7 @@ cat =  """      ／＞　 フ
 
 # -------------------------------------------- Ready to Use R0 and Cost Function -----------------------------------------------
 
-def f(x, y, cell='Cell C'):
+def f(x, y, cell='Cell C', first_order=False):
     '''
     Compute the modeled Resistence Zero based on the provided SoC (State of Charge) and SoH (State of Health) 
     for a specified cell type using a polynomial model.
@@ -41,7 +43,8 @@ def f(x, y, cell='Cell C'):
     Parameters:
     - x (float): SoC (State of Charge) of the cell(s).
     - y (float): SoH (State of Health) of the cell(s).
-    - cell (str, optional): The type of the cell ('Cell C' or 'Cell D'). Defaults to 'Cell C'.
+    - cell (str, optional): The type of the cell ('Cell C' or 'Cell D'). (Defaults to 'Cell C')
+    - first_order (boolean): Detect if it's used as a term in the first order function. (Defaults to False)
 
     Returns:
     - float: The modeled resistance for the given SoC and SoH. 
@@ -49,10 +52,13 @@ def f(x, y, cell='Cell C'):
     Raises:
     - ValueError: If an unknown cell type is provided (neither 'Cell C' nor 'Cell D').
     '''
-    if cell == 'Cell C':
-        (coefficients, degree) = data_pack_c
-    elif cell == 'Cell D':
+    if cell == 'Cell D':
         (coefficients, degree) = data_pack_d
+    elif first_order:
+        coefficients = np.load(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/R0_models/coefficients_R0_1.npy'))
+        degree = 7
+    elif cell == 'Cell C':
+        (coefficients, degree) = data_pack_c
     else:
         print(cat, '\nError: Unknown Cell')
         return 
@@ -88,9 +94,31 @@ def cost(df, column_name='Model Voltage'):
         print(cat, '\nError: Unknown Column name')
         return df
     else:
-        error = [df[column_name][i] - df['Voltage'][i] for i in range(len(df))]
-        df['Error'] = error
+        error = [df[column_name].iloc[i] - df['Voltage'].iloc[i] for i in range(len(df))]
+        df.loc[:,'Error'] = error
         return df
+
+def mean_abs_cost(df):
+    '''
+    Calculate the mean absolute error between the modeled voltage and the actual voltage in the given DataFrame,
+
+    Parameters:
+    - df (pandas.DataFrame): A DataFrame containing the actual voltage ('Voltage') and the modeled voltage 
+      (specified by 'column_name', default is 'Model Voltage').
+
+    Returns:
+    - float: the mean absolute error between the modeled voltage and actual voltage in the given DataFrame.
+
+    Raises:
+    - Prints an error message and returns the original DataFrame if column 'Error' does not exist in the DataFrame.
+    '''
+    if 'Error' not in df.columns:
+        print(cat, '\nPls Calculate the Error first')
+        return 0
+    else:
+        df['abs err'] = [abs(i) for i in df['Error']]
+        avg_error = df['abs err'].mean()
+        return avg_error
 
 
 # ------------------------------------------- Ready to Use OCV Function --------------------------------------------------------------
@@ -185,6 +213,7 @@ def pulses_extract(df):
     '''
     t_s, x = locate_ti(df, 7)
     x, t_e = locate_ti(df, 7, find_end=True)
+    t_s, t_e = locate_ti(df, 6, pattern=7, offset=2, offset_2=30)
     return extract_ti(df, t_s, t_e)
 
 
@@ -330,6 +359,16 @@ def soh(cell, test):
     # print(Q_remaining, q_init)
     return SOH
 
+
+def general_soc(df, time=10, Q=109890.8699999999):
+    # Assuming the battery was fully charged at the beginning (SoC = 1 at Total Time = 0)
+    # The constant, Q, for example, was 109890.8699999999 during the first cycle of Cell C
+    SoC = []
+    soc_cur = 1
+    for i in range(len(df)):
+        SoC.append(soc_cur)
+        soc_cur = soc_cur + (df['Current'][i]*time/Q)
+    return SoC
 
 # -------------------------------------------------------OCV--------------------------------------------------------------
 

@@ -6,18 +6,17 @@ import os
 from scipy.integrate import cumulative_trapezoid
 import plot as pt
 import R0_identification_tianhe as rz
-import Tianhe_csvPlot as ti
 import math
-import R0_fit
-import OCV_fit
+import zeroth_order_modules as zom
 from scipy.optimize import curve_fit
-import cell_plotting_tests_etienne as et
+
+pd.options.mode.chained_assignment = None  # Suppress SettingWithCopyWarning
 
 # -------------------------------------------- Files --------------------------------------------------
 
 
 # Define the folder path containing the CSV files
-folderPath = './cells_data'
+folderPath = zom.data_file_path
 
 # Get a list of all CSV files in the folder
 csv_files = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
@@ -124,10 +123,10 @@ def extract_step(first, second, cell, test):
         return None
 
     # Locate start and end of the step range
-    t_s, _ = ti.locate(df, first, 0)
-    _, t_e = ti.locate(df, second, 0)
+    t_s, _ = zom.locate_ti(df, first, 0)
+    _, t_e = zom.locate_ti(df, second, 0)
     
-    return ti.extract(df, t_s, t_e)
+    return zom.extract_ti(df, t_s, t_e)
 
 
 # ---------------------------------------------------- SOC AND SOH ---------------------------------------------------
@@ -256,10 +255,10 @@ def soc_ocv(cell, test):
     })
     
     # Extract OCV measurement points
-    pulses = et.extract_pulses(cell, test)
+    pulses = zom.extract_pulses(cell, test)
     col1 = [pulse["Total Time"].iloc[1] for pulse in pulses]  # Extract measurement times
     col2 = [pulse["Current"].iloc[1] for pulse in pulses]  # Extract corresponding current
-    col3 = et.measure_OCV(pulses)  # Measure OCV at extracted points
+    col3 = zom.measure_OCV(pulses)  # Measure OCV at extracted points
     
     # Map SoC values to OCV measurement times
     col4 = [df_pre["SoC"].loc[df_pre["Total Time"] == i].values[0] if i in df_pre["Total Time"].values else np.nan for i in col1]
@@ -336,7 +335,7 @@ def add_R0(cell, test):
     global soh_value  # Use global SoH value
     df = extract(cell, test)  # Extract data
     df["SoC"] = soc(cell, test)  # Add SoC values
-    df["R0"] = [R0_fit.f(soc_val, soh_value) for soc_val in df["SoC"]]  # Compute R0
+    df["R0"] = [zom.f(soc_val, soh_value) for soc_val in df["SoC"]]  # Compute R0
     return df
 
 # ----------------------------------------------------MODEL 0--------------------------------------------------------------

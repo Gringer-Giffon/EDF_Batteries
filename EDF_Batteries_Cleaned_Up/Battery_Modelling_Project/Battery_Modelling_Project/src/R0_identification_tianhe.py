@@ -7,7 +7,8 @@ import data as dt
 
 myList = []
 
-folderPath = f'./cells_data'
+data_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/cells_data') # Reaching the datas in the data folder
+folderPath = data_file_path
 
 csvFiles = [f for f in os.listdir(folderPath) if f.endswith('.csv')]
 
