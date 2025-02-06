@@ -381,3 +381,86 @@ def calculate_R0(soc, cell, test):
     poly = soc_R0_fitted(cell, test)
     return [poly(soc) for soc in soc]
     # return [4+deg4_model(soc, coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4])/15 for  soc in soc]
+
+"""
+def find_tau(cell,test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) test number
+
+    Returns dataframe of a range of rows where tau can be measured
+    '''
+    if cell == "D":
+        time_between_dupes = 0  # allows reduction of measurement points on graph
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Current"].isin(range(29,32))]
+    elif cell == "C":
+        time_between_dupes = 0
+        data = add_ocv(cell,test)[add_ocv(cell,test)["Current"].isin(range(31,34))]
+    else:
+        print("Invalid cell entry. Cell entry must be C or D")
+        return None
+    data_no_dupes = data.loc[~(
+        data["Total Time"].diff().abs() < time_between_dupes)]
+    return data_no_dupes
+
+
+def measure_tau(cell, test):
+    '''
+    Parameters: cell (string) "C" or "D", test (string) test number
+
+    Returns dataframe including calculated values for tau over measurable range
+    '''
+    df = find_tau(cell,test)
+
+    discontinuities = df.index.to_series().diff().gt(1)  # Find differences greater than 1
+
+    # Initialize the list to hold DataFrame splits
+    splits = []
+    start_idx = 0
+
+    # Split DataFrame at the discontinuities
+    for i, discontinuity in enumerate(discontinuities):
+        if discontinuity:  # Discontinuity found
+            splits.append(df.iloc[start_idx:i])  # Add the segment up to the discontinuity
+            start_idx = i
+
+    tau_values = []
+
+    for split in splits:
+        # Ignore empty splits
+        if split.empty:
+            continue
+
+        target_voltage = 0.95 * split["Voltage"].iloc[-1]
+
+        # Find the closest time when voltage reaches the target value
+        closest_index = (split["Voltage"] - target_voltage).abs().idxmin()
+        
+        if closest_index != split.index[0]:  # Ensure a valid time difference
+            tau_value = (split["Total Time"].loc[closest_index] - split["Total Time"].iloc[0])/5
+        else:
+            tau_value = np.nan
+
+        # Append tau to the DataFrame and store in list
+        split["tau"] = tau_value
+        tau_values.append(split)
+    
+    '''
+    df = splits[0]
+    for i in range (1, len(splits)):
+        df = df.merge(splits[i])
+    '''
+    '''
+    x = []
+    y = []
+
+    for split in splits:
+        x.append(split["SoC"].iloc[0])
+        y.append(split["tau"].iloc[0])
+
+
+    plt.plot(x,y,"x")
+    '''
+
+    return pd.concat(splits)
+
+"""
