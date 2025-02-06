@@ -6,6 +6,7 @@ from scipy.integrate import cumulative_trapezoid
 import data as dt
 from mpl_toolkits.mplot3d import Axes3D
 import R0_fit as r_calc
+import OCV_fit as v_calc
 
 # ------------------------------------------------ PLOTTING CONFIGURATION ------------------------------------------------ #
 plt.rcParams['font.family'] = 'serif'
@@ -312,10 +313,33 @@ def model_data_r0_soc_soh():
     ax.set_zlabel('Resistance Zero (Ohm)')
     ax.set_title('SoC and SoH Effects on R0')
     
-    ax.view_init(elev=30, azim=120)
+    ax.view_init(elev=20, azim=60)
     
     plt.show()
+
+
+def model_data_ocv_soc_soh():
+    f_vectorized = np.vectorize(v_calc.f)
     
+    x = np.linspace(0,1,100)
+    y = np.linspace(0.9,1,100)
+    x,y = np.meshgrid(x,y)
+    z= f_vectorized(x,y)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(x,y,z,c=z,cmap='viridis')
+    
+    ax.set_xlabel('SoC Value')
+    ax.set_ylabel('SoH Value')
+    ax.set_zlabel('Open Circuit Voltage (V)')
+    ax.set_title('SoC and SoH Effects on OCV')
+    
+    ax.view_init(elev=20, azim=60)
+    
+    plt.show()
+     
 
 def plot_model_voltage_0(cell, test):
     """
