@@ -88,7 +88,7 @@ def extract_step(first, second, cell, test):
     elif cell == 'D':
         df = dfd[test]
     else:
-        print('oops')
+        print('Invalid cell input')
         return [0, 0]
     t_s, x = ti.locate(df, first, 0)
     x, t_e = ti.locate(df, second, 0)
@@ -473,8 +473,6 @@ def find_tau(cell, test):
         print("Invalid cell")
         return None
 
-    print("extracted tau data", df)
-
     return df
 
 
@@ -522,10 +520,8 @@ def measure_tau(cell, test):
         # target_voltage = df["Voltage"].iloc[0] - 0.63*abs(df["Voltage"].iloc[0]-min(df["Voltage"]))
 
         final_voltage = min(split["Voltage"])
-        print("final voltage,", final_voltage)
         target_voltage = split["Voltage"].iloc[0] - 0.63 * \
             abs(split["Voltage"].iloc[0]-min(split["Voltage"]))
-        print("target voltage", target_voltage)
 
         # Find the index where voltage is closest to target
         idx = (split["Voltage"] - target_voltage).abs().idxmin()
@@ -535,14 +531,8 @@ def measure_tau(cell, test):
         if idx is not None and idx > 0:
             split["tau"] = split["Total Time"].loc[idx] - \
                 split["Total Time"].iloc[0]
-            print("voltages", split["Voltage"])
-            print("correct idx voltage,", split["Voltage"].loc[idx])
         else:
             split["tau"] = np.nan  # or some default value
-
-        print(
-            f"Final voltage: {final_voltage}, Target voltage: {target_voltage}, Tau: {split['tau']}")
-
     return pd.concat(splits)
 
 
@@ -676,14 +666,12 @@ def calculate_tau(soc, cell, test):
 def add_tau(cell, test):
     df = add_r1(cell, test)
     df["tau"] = calculate_tau(df["SoC"], cell, test)
-    print("add tau", df)
     return df
 
 
 def add_c1(cell, test):
     df = add_tau(cell, test)
     df["C1"] = df["tau"]/df["R1"]
-    print("add c1", df)
     return df
 
 
@@ -714,31 +702,22 @@ def calculate_model_voltage_1(cell, test):
     soh_value = soh(cell, test)
 
     df = calculate_model_voltage_0(cell, test)
-    print("calculated model 0")
     df1 = add_c1(cell, test)
-    print("df1", df1)
 
     # df["Model Voltage 1"] = df["Model Voltage 0"].copy()
 
     # Merge df1 into df to align by "Total Time" directly
     df = df.merge(df1[["Total Time", "R1", "tau", "C1"]],
                   on="Total Time", how="left")
-    print("merged", df)
 
     # Calculate model voltage using vectorized operations
     df = time_pulses_calc(df)
     df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] *
                              df1["Current"].iloc[i] * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
 
-    print(df["R1"] * df1["Current"] *
-          (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))
 
     # Handle NaN results if tau was NaN or zero
     # df["Model Voltage 1"].fillna(df["Model Voltage 0"], inplace=True)
-
-    df.to_csv("model1")
-    print(df[df["Step"].isin(range(6, 9))])
-
     return df
 
 
