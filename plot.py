@@ -356,7 +356,7 @@ if __name__ == '__main__':
     #plot_simultaneous("D", "01")
     #plot_simultaneous("C", "01")
     #plot_soc_ocv("C","01")
-    plot_test("D","01")
+    plot_soc("D","01")
     plt.show
     plot_simultaneous_1("D","01")
     '''
