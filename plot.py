@@ -128,6 +128,44 @@ def plot_soh(cell):
     plt.show()
     return None
 
+def plot_soh_cell_c_cell_d():
+    """
+        Plots the SoH of both cell C and D. The y axis is the value of SoH. The x axis is the value of the tests
+    """
+    
+    soh_c = []
+    soh_d = []
+    
+    # Find SoH of Cell C
+    for test in range(0, 23+1):
+        soh_i = dt.soh("C", test)*100
+        soh_c.append(soh_i)
+    
+    
+    # Find SoH of Cell D
+    for test in range(0, 13+1):
+        soh_i = dt.soh("D", test)*100
+        soh_d.append(soh_i)
+            
+    fig, axs = plt.subplots(2, 1)
+    fig.suptitle("SoH of Cells C and D")  # main title
+
+    axs[0].plot(list(range(0, 23+1)), soh_c, "g")
+    axs[0].set_ylabel("SoH [%]")
+    axs[0].set_xlabel("Tests")
+    axs[0].set_title("SoH of cell C")
+    axs[1].plot(list(range(0, 13+1)), soh_d, "g")
+    axs[1].set_ylabel("SoH [%]")
+    axs[1].set_xlabel("Tests")
+    axs[1].set_title("SoH of Cell D")
+    
+    plt.subplots_adjust(hspace = 1)
+    plt.show()
+    
+    return None
+
+
+
 
 def plot_soc(cell, test):
     '''

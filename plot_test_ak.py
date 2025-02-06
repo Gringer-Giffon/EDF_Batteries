@@ -22,5 +22,5 @@ def model_data_soc_ocv(cell, test):
 
 
 
-pt.plot_soc(cell, test)
+pt.plot_soh_cell_c_cell_d()
 plt.show()
