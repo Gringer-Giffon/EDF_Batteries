@@ -253,12 +253,6 @@ def plot_soc_ocv(cell, test):
 
     Plots OCV as a function of SoC for certain measure points
     Returns None
-    '''def plot_soc_ocv(cell, test):
-    '''
-    Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
-
-    Plots OCV as a function of SoC for certain measure points
-    Returns None
     '''
 
     # Dataframe of initial data with SoC and OCV
