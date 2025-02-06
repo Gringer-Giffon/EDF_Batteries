@@ -7,12 +7,12 @@ import OCV_fit
 
 
 
-cell = "D"
+cell = "C"
 test = "0"
 
 
+pt.plot_r1_soc(cell, test)
 
-pt.plot_simultaneous_0("C", "09")
 plt.show()
 
 #df = dt.calculate_model_voltage_0(cell, test)  # Compute 0th-order model

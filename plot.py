@@ -286,13 +286,7 @@ def plot_model_data_soc_ocv(cell, test):
     plt.plot(x, polynomial(x), label="Fitted OCV Model") # Plot the fitted curve
     plt.legend()
 
-def model_data_soc_ocv_soh(cell):
-    
-    plot_model_data_soc_ocv(cell, 0)
-    plot_model_data_soc_ocv(cell, 5)
-    plot_model_data_soc_ocv(cell, 11)
-    
-    plt.show()
+
     
     
 def model_data_r0_soc_soh():
