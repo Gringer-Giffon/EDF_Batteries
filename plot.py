@@ -210,15 +210,18 @@ def plot_soc(cell, test):
     axs[1].plot(df["Total Time"], df["SoC"], label="SoC Curve")
 
     # Annotate key points
-    axs[1].annotate("Pulse Start", xy=(pulse_start, pulse_soc), xytext=(pulse_start + 50, pulse_soc + 2.5),
+    axs[1].annotate("Pulse Start", xy=(pulse_start, pulse_soc), xytext=(pulse_start, pulse_soc - 20),
                  arrowprops=dict(facecolor='red', arrowstyle='->'), fontsize=9)
 
     axs[1].annotate("Pulse End", xy=(full_charge_start, full_charge_soc),
-                 xytext=(full_charge_start + 50, full_charge_soc - 4),
+                 xytext=(full_charge_start, full_charge_soc + 20),
                  arrowprops=dict(facecolor='green', arrowstyle='->'), fontsize=9)
-    axs[1].annotate("Full Discharge End", xy=(full_discharge_end-40, full_discharge_soc),
-                 xytext=(full_discharge_end+50, full_discharge_soc - 3),
-                 arrowprops=dict(facecolor='green', arrowstyle='->'), fontsize=9)
+    
+    """
+    axs[1].annotate("Discharge End", xy=(full_discharge_end-40, full_discharge_soc),
+                 xytext=(full_discharge_end, full_discharge_soc - 10),
+                 arrowprops=dict(facecolor='green', arrowstyle='-'), fontsize=9)
+    """
 
     # Add labels, legend, and grid
 
@@ -230,7 +233,7 @@ def plot_soc(cell, test):
     axs[1].set_ylabel("SOC (%)")
     axs[1].set_title(f"State of Charge vs Time: cell {cell} test {test}")
     
-    plt.subplots_adjust(hspace = 1.25)
+    plt.subplots_adjust(hspace = 1)
     
     plt.grid(True)
     plt.show()
