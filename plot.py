@@ -432,9 +432,9 @@ def plot_simultaneous(cell, test):
     df = dt.calculate_model_voltage_1(cell, test)  # Compute 1st-order model
 
     plt.figure(figsize=(8, 5)) # plot 
-    plt.plot(df["Total Time"], df["Voltage"], "bx", label="Measured Voltage")
-    plt.plot(df["Total Time"], df["Model Voltage 0"], "gx", label="Model Voltage 0")
-    plt.plot(df["Total Time"], df["Model Voltage 1"], "rx", label="Model Voltage 1")
+    plt.plot(df["Total Time"], df["Voltage"], "b", label="Measured Voltage")
+    plt.plot(df["Total Time"], df["Model Voltage 0"], "g", label="Model Voltage 0")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "r", label="Model Voltage 1")
     plt.xlabel("Time (s)")
     plt.ylabel("Voltage (V)")
     plt.title("Measured vs. Modeled Voltage (0th & 1st Order)")
@@ -541,7 +541,7 @@ if __name__ == '__main__':
     #plot_soc_ocv("C","01")
     #plot_soc("D","01")
     #plt.show
-    plot_simultaneous_0("C","01")
+    plot_simultaneous("C","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")
