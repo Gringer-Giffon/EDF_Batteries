@@ -21,10 +21,6 @@ def model_data_soc_ocv(cell, test):
     plt.plot(x, polynomial(x), "b-")
 
 
-model_data_soc_ocv(cell, test)
+
+pt.plot_soc(cell, test)
 plt.show()
-
-        
-            
-    
-

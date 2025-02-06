@@ -164,24 +164,33 @@ def plot_soc(cell, test):
     full_discharge_end = full_charge_region["Total Time"].iloc[-1]
     full_discharge_soc = full_charge_region["SoC"].iloc[-1]
 
+    # Plot Current over time
+    fig, axs= plt.subplots(2,1)
+    axs[0].plot(df["Total Time"],df["Current"])
+
     # Plot SoC over Time
-    plt.plot(df["Total Time"], df["SoC"], label="SoC Curve")
+    axs[1].plot(df["Total Time"], df["SoC"], label="SoC Curve")
 
     # Annotate key points
-    plt.annotate("Pulse Start", xy=(pulse_start, pulse_soc), xytext=(pulse_start + 50, pulse_soc + 2.5),
+    axs[1].annotate("Pulse Start", xy=(pulse_start, pulse_soc), xytext=(pulse_start + 50, pulse_soc + 2.5),
                  arrowprops=dict(facecolor='red', arrowstyle='->'), fontsize=9)
 
-    plt.annotate("Pulse End/Full Charge Start", xy=(full_charge_start, full_charge_soc),
+    axs[1].annotate("Pulse End", xy=(full_charge_start, full_charge_soc),
                  xytext=(full_charge_start + 50, full_charge_soc - 4),
                  arrowprops=dict(facecolor='green', arrowstyle='->'), fontsize=9)
-    plt.annotate("Full Discharge End", xy=(full_discharge_end-40, full_discharge_soc),
+    axs[1].annotate("Full Discharge End", xy=(full_discharge_end-40, full_discharge_soc),
                  xytext=(full_discharge_end+50, full_discharge_soc - 3),
                  arrowprops=dict(facecolor='green', arrowstyle='->'), fontsize=9)
 
     # Add labels, legend, and grid
-    plt.xlabel("Time (s)")
-    plt.ylabel("SOC (%)")
-    plt.title(f"State of Charge vs Time: cell {cell} test {test}")
+
+    axs[0].set_xlabel("Time (s)")
+    axs[0].set_ylabel("Current (%)")
+    axs[0].set_title(f"Current vs Time: cell {cell} test {test}")
+    
+    axs[1].set_xlabel("Time (s)")
+    axs[1].set_ylabel("SOC (%)")
+    axs[1].set_title(f"State of Charge vs Time: cell {cell} test {test}")
     plt.grid(True)
     plt.show()
     return None
