@@ -731,7 +731,7 @@ def table_soc(cell,test):
 """
 
 if __name__ == "__main__":
-
+    print(calculate_model_voltage_1("C","01"))
     # print(table_soc("C","01"))
     # print(soc("C","01"))
     """
