@@ -191,6 +191,9 @@ def plot_soc(cell, test):
     axs[1].set_xlabel("Time (s)")
     axs[1].set_ylabel("SOC (%)")
     axs[1].set_title(f"State of Charge vs Time: cell {cell} test {test}")
+    
+    plt.subplots_adjust(hspace = 1)
+    
     plt.grid(True)
     plt.show()
     return None
