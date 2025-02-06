@@ -318,25 +318,33 @@ def model_data_r0_soc_soh():
     plt.show()
 
 
-def model_data_ocv_soc_soh():
+def model_data_ocv_soc_soh(cell):
+
+    if cell == "C":
+        print("Cell C")
+    if cell == "D":
+        print("Cell D")
+
+
     f_vectorized = np.vectorize(v_calc.f)
     
-    x = np.linspace(0,1,100)
-    y = np.linspace(0.9,1,100)
-    x,y = np.meshgrid(x,y)
-    z= f_vectorized(x,y)
+    x = np.linspace(0,1,30)
+    y = np.linspace(0.9,1,30)
+    x, y = np.meshgrid(x, y)
+    z = f_vectorized(x, y)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter(x,y,z,c=z,cmap='viridis')
-    
+    # Change from scatter to surface plot
+    ax.plot_surface(x, y, z, cmap='viridis', edgecolor='none')
+
     ax.set_xlabel('SoC Value')
     ax.set_ylabel('SoH Value')
     ax.set_zlabel('Open Circuit Voltage (V)')
     ax.set_title('SoC and SoH Effects on OCV')
-    
-    ax.view_init(elev=20, azim=60)
+
+    ax.view_init(elev=20, azim=240)
     
     plt.show()
      

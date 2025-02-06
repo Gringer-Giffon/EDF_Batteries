@@ -10,7 +10,7 @@ import OCV_fit
 cell = "D"
 test = "0"
 
-pt.model_data_r0_soc_soh()
+pt.model_data_ocv_soc_soh()
 plt.show()
 
                        
