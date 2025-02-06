@@ -13,6 +13,7 @@ import OCV_fit
 from scipy.optimize import curve_fit
 import cell_plotting_tests_etienne as et
 
+pd.options.mode.chained_assignment = None
 
 folderPath = f'./cells_data'
 
@@ -335,9 +336,8 @@ def calculate_model_voltage_0(cell, test):
     soh_value = soh(cell, test)
 
     df = add_ocv(cell, test)  # Dataframe with R0 and OCV
-    df["Model Voltage 0"] = [df["OCV"].iloc[i]-df["R0"].iloc[i]
-                             * abs(df["Current"].iloc[i]) if df["Current"].iloc[i] <0 else df["OCV"].iloc[i]+df["R0"].iloc[i]
-                             * abs(df["Current"].iloc[i]) for i in range(len(df))]
+    df["Model Voltage 0"] = [df["OCV"].iloc[i]+df["R0"].iloc[i]
+                             * df["Current"].iloc[i] for i in range(len(df))]
     return df
 
 
@@ -392,10 +392,13 @@ def measure_r1(cell, test):
             # Add the segment up to the discontinuity
             splits.append(df.iloc[start_idx:i])
             start_idx = i
-
+    
     for split in splits:
-        split["R1"] = abs(split["Voltage"].iloc[0] -
-                          split["Voltage"].iloc[-1]) / abs(split["Current"].iloc[-1])
+        R1 = []
+        for i in range(0,len(split)):
+            R1.append(abs(split["Voltage"].iloc[0] -
+                          split["Voltage"].iloc[-1]) / abs(split["Current"].iloc[-1]))
+        split["R1"] = R1
 
     """
     df = splits[0]
@@ -692,7 +695,7 @@ def time_pulses_calc(df):
     time_list.append(time)
     for i in range(len(df)-1):
         #if abs(df['Current'][i] - df['Current'][i+1])/(df['Total Time'][i+1] - df['Total Time'][i]) >= threashold:
-        if abs(df['Current'][i] - df['Current'][i+1]) >= threashold:
+        if abs(abs(df['Current'][i]) - abs(df['Current'][i+1])) >= threashold:
             time = 0
         time += df['Total Time'][i+1] - df['Total Time'][i]
         time_list.append(time)
@@ -725,9 +728,8 @@ def calculate_model_voltage_1(cell, test):
     
     # Calculate model voltage using vectorized operations
     df = time_pulses_calc(df)
-    df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] - df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) if df1["Current"].iloc[i] <0 else df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
-        abs(df1["Current"].iloc[i]) * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
+    df["Model Voltage 1"] = [df["Model Voltage 0"].iloc[i] + df["R1"].iloc[i] * \
+        df1["Current"].iloc[i] * (1-np.exp(-df["Time"].iloc[i] / df["tau"].iloc[i])) for i in range(len(df))]
 
     print(df["R1"] * df1["Current"] *
           (1-np.exp(df["Total Time"] / df["R1"]*df["C1"])))

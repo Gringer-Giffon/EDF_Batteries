@@ -325,8 +325,8 @@ def plot_simultaneous(cell, test):
 
 def plot_simultaneous_1(cell,test):
     df = dt.calculate_model_voltage_1(cell, test)
-    plt.plot(df["Total Time"], df["Voltage"], "bx")
-    plt.plot(df["Total Time"], df["Model Voltage 1"], "rx")
+    plt.plot(df["Total Time"], df["Voltage"], "b")
+    plt.plot(df["Total Time"], df["Model Voltage 1"], "r")
     plt.legend(["Data","Model Voltage 1"])
 
 
@@ -397,9 +397,9 @@ if __name__ == '__main__':
     #plot_simultaneous("D", "01")
     #plot_simultaneous("C", "01")
     #plot_soc_ocv("C","01")
-    plot_soc("D","01")
-    plt.show
-    plot_simultaneous_1("D","01")
+    #plot_soc("D","01")
+    #plt.show
+    plot_simultaneous_1("C","01")
     '''
     data = extract("D", "02")
     soc = soc_full_d("02")

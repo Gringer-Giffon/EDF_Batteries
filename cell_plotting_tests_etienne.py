@@ -291,9 +291,14 @@ def model_pulses():
 
 if __name__ == "__main__":
     # model_pulse()
-    pulses = extract_pulses("C", "01")
+    #pulses = extract_pulses("C", "01")
 
-    print(measure_tau(pulses))
+
+    pt.plot_soc_ocv("D","00")
+    pt.plot_soc_ocv("D","05")
+    pt.plot_soc_ocv("D","11")
+    plt.show()
+    #print(measure_tau(pulses))
 
     # model_pulses()
 
