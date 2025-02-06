@@ -334,8 +334,7 @@ def model_data_ocv_soc_soh():
     ax.set_xlabel('SoC Value')
     ax.set_ylabel('SoH Value')
     ax.set_zlabel('Open Circuit Voltage (V)')
-    ax.set_title('SoC and SoH Effects on OCV of cell ' + cell)
-
+    fig.suptitle('SoC and SoH Effects on OCV of cell ' + cell, fontsize=20, fontweight='bold')    
     ax.view_init(elev=20, azim=240)
     plt.show()
      
