@@ -11,5 +11,5 @@ cell = "C"
 test = "00"
 
 
-pt.plot_simultaneous_0(cell, test)
+pt.plot_simultaneous_1("C", "01")
 plt.show()
