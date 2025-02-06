@@ -296,32 +296,28 @@ def plot_model_data_soc_ocv(cell, test):
     plt.legend()
 
 
-def model_data_soc_ocv_soh(cell):
-
-    plot_model_data_soc_ocv(cell, 0)
-    plot_model_data_soc_ocv(cell, 5)
-    plot_model_data_soc_ocv(cell, 11)
-
-    plt.show()
-
-
+    
+    
 def model_data_r0_soc_soh():
+    
+    cell = "C"
     f_vectorized = np.vectorize(r_calc.f)
-
+    
     x = np.linspace(0, 1, 100)
     y = np.linspace(0.9, 1, 100)
     x, y = np.meshgrid(x, y)
     z = f_vectorized(x, y)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter(x, y, z, c=z, cmap='viridis')
+    # Use plot_surface instead of scatter
+    ax.plot_surface(x, y, z, cmap='viridis', edgecolor='none')
 
     ax.set_xlabel('SoC Value')
     ax.set_ylabel('SoH Value')
     ax.set_zlabel('Resistance Zero (Ohm)')
-    ax.set_title('SoC and SoH Effects on R0')
+    ax.set_title('SoC and SoH Effects on R0 of cell ' + cell)
 
     ax.view_init(elev=20, azim=60)
 
@@ -329,25 +325,27 @@ def model_data_r0_soc_soh():
 
 
 def model_data_ocv_soc_soh():
+    cell = "C"
+    
     f_vectorized = np.vectorize(v_calc.f)
-
-    x = np.linspace(0, 1, 100)
-    y = np.linspace(0.9, 1, 100)
+    
+    x = np.linspace(0,1,30)
+    y = np.linspace(0.9,1,30)
     x, y = np.meshgrid(x, y)
     z = f_vectorized(x, y)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter(x, y, z, c=z, cmap='viridis')
+    # Change from scatter to surface plot
+    ax.plot_surface(x, y, z, cmap='viridis', edgecolor='none')
 
     ax.set_xlabel('SoC Value')
     ax.set_ylabel('SoH Value')
     ax.set_zlabel('Open Circuit Voltage (V)')
-    ax.set_title('SoC and SoH Effects on OCV')
+    ax.set_title('SoC and SoH Effects on OCV of cell ' + cell)
 
-    ax.view_init(elev=20, azim=60)
-
+    ax.view_init(elev=20, azim=240)
     plt.show()
 
 
@@ -433,7 +431,8 @@ def plot_simultaneous_0(cell, test):
     plt.title("Measured vs. 0th-Order Model Voltage")
     plt.legend()
     plt.show()
-
+    
+    
 
 def plot_simultaneous(cell, test):
     """
