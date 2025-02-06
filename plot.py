@@ -41,17 +41,17 @@ def plot_test(cell, test):
 
     fig.suptitle("Cell: "+cell.upper()+",test: "+test)  # main title
 
-    axs[0].plot(time, current, color=centrale_red)
+    axs[0].plot(time, current, "o", ms = 1, color=centrale_red)
     axs[0].set_title("Current vs Time")
     axs[0].set_xlabel("Time (s)")
     axs[0].set_ylabel("Current (A)")
 
-    axs[1].plot(time, voltage, color=centrale_red)
+    axs[1].plot(time, voltage,  "o", ms = 1, color=centrale_red)
     axs[1].set_title("Voltage vs Time")
     axs[1].set_xlabel("Time (s)")
     axs[1].set_ylabel("Voltage (V)")
 
-    axs[2].plot(time, step, color= centrale_red)
+    axs[2].plot(time, step, "o", ms = 1, color= centrale_red)
     axs[2].set_title("Step vs Time")
     axs[2].set_xlabel("Time (s)")
     axs[2].set_ylabel("Step")
