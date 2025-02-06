@@ -1,4 +1,4 @@
-iimport pandas as pd
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -246,14 +246,8 @@ def plot_soc(cell, test):
     plt.grid(True)
     plt.show()
     return None
-
+    
 def plot_soc_ocv(cell, test):
-    '''
-    Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
-
-    Plots OCV as a function of SoC for certain measure points
-    Returns None
-    '''def plot_soc_ocv(cell, test):
     '''
     Parameters: cell (string) "C" or "D", test (string) "01","02","10",etc...
 
@@ -271,6 +265,8 @@ def plot_soc_ocv(cell, test):
     plt.title("OCV vs SoC: cell "+cell+" test "+test)
     return None
 
+
+
 def plot_model_data_soc_ocv(cell, test):
     """
     Plots the SoC-OCV data and overlays the fitted polynomial model.
@@ -284,9 +280,17 @@ def plot_model_data_soc_ocv(cell, test):
     polynomial = dt.soc_ocv_fitted(cell, test) # Get the fitted polynomial model
     x = np.linspace(0, 1, 100)
 
-    plt.plot(x, polynomial(x), "b-", label="Fitted OCV Model") # Plot the fitted curve
+    plt.plot(x, polynomial(x), label="Fitted OCV Model") # Plot the fitted curve
     plt.legend()
+
+def model_data_soc_ocv_soh(cell):
+    
+    plot_model_data_soc_ocv(cell, 0)
+    plot_model_data_soc_ocv(cell, 5)
+    plot_model_data_soc_ocv(cell, 11)
+    
     plt.show()
+    
 
 def plot_model_voltage_0(cell, test):
     """
